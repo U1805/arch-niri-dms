@@ -72,6 +72,7 @@ window-rule {
     match title="另存为"
     match app-id="better_control.py"
     match app-id="niri-hotkey-menu"
+    match app-id="io.github.shorin.proton_wrapper_configure"
     open-floating true
 }
 // 开启后不聚焦的窗口
