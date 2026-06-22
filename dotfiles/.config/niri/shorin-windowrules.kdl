@@ -20,14 +20,7 @@ window-rule {
     match app-id="imv"
     open-floating true
     }
-// steam 好友列表
-window-rule {
-    match app-id="steam" title="Friends List"
-    match app-id="steam" title="好友列表"
-    default-column-width { proportion 0.20; }
-
-}
-//shorinclip剪贴板TUI 
+//shorinclip剪贴板TUI
 window-rule {
 	match app-id="shorinclip"
 	default-column-width { fixed 625; }
@@ -38,23 +31,16 @@ window-rule {
 }
 // 以浮动模式打开的软件
 window-rule {
-    // This app-id regular expression will work for both:
-    // - host Firefox (app-id is "firefox")
-    // - Flatpak Firefox (app-id is "org.mozilla.firefox")
     match app-id="com.gabm.satty"
     match app-id="media_info"
     match app-id="video2gif"
     match app-id="floating-term"
-    match app-id="nm-connection-editor"
     match app-id="niri-quick-switch"
-    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
-    match app-id="steam" title="Friends List"
     match app-id="blueberry.py" title="蓝牙"
     match app-id="blueman-manager"
     match app-id="flameshot"
     match app-id="com.github.hluk.copyq" 
     match app-id="be.alexandervanhee.gradia"
-    match app-id="org.pulseaudio.pavucontrol" title="音量控制"
     match app-id="org.gnome.clocks" title="时钟"
     match app-id="fcitx" title="Fcitx5 Input Window"
     match app-id="org.gnome.FileRoller"
@@ -68,7 +54,6 @@ window-rule {
     match title="重命名"
     match app-id="btrfs-assistant"
     match app-id="markpix"
-    match title="Steam 设置" 
     match title="另存为"
     match app-id="better_control.py"
     match app-id="niri-hotkey-menu"
@@ -129,11 +114,3 @@ window-rule {
     match app-id="celluloid"
     opacity 1.0 
 }
-
-// steam好友弹窗修复
-window-rule {
-    match app-id="steam" title=r#"^notificationtoasts_\d+_desktop$"#
-    default-floating-position x=10 y=10 relative-to="bottom-right"
-    open-focused false
-}
-

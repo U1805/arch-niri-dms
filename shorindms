@@ -40,7 +40,7 @@ CACHE_FILE="$HOME/.cache/shorin-dms-niri-software.cache"
 # ==========================================
 TARGET_SOFTWARE=(
     # Core utilities & Media
-    "shorin-dms-niri-git" "xdg-desktop-portal-gnome" "satty" "slurp" "imv" "mpv" "firefox" "niri-sidebar-git"
+    "xdg-desktop-portal-gnome" "satty" "slurp" "imv" "mpv" "zen-browser-bin" "niri-sidebar-git"
     # Fonts
     "noto-fonts" "noto-fonts-cjk" "noto-fonts-emoji"
     # File Manager & Plugins
@@ -51,14 +51,14 @@ TARGET_SOFTWARE=(
     # Terminal, Shell & CLI Tools
     "kitty" "xdg-terminal-exec" "bat" "fuzzel" "wf-recorder" "wl-screenrec-git"
     "ttf-jetbrains-maple-mono-nf-xx-xx" "eza" "zoxide" "starship" "jq" "fish"
-    "timg" "imagemagick" "shorin-contrib-git" "fastfetch" "gdu" "btop" "opencode"
+    "timg" "imagemagick" "shorin-contrib-git" "fastfetch" "gdu" "btop"
     "shorin-screenrec-menu-git"
-    # Theming & Flatpak
-    "flatpak" "bazaar" "matugen" "adw-gtk-theme" "python-pywalfox" "nwg-look" "breeze-cursors"
+    # Theming
+    "bazaar" "matugen" "adw-gtk-theme" "nwg-look" "breeze-cursors"
     # Input Method
-    "fcitx5" "fcitx5-configtool" "fcitx5-gtk" "fcitx5-qt" "fcitx5-rime" "rime-ice-git" "rime-wubi" "rime-wanxiang-gram-zh-hans" "rime-llm-translator-git"
+    "fcitx5" "fcitx5-configtool" "fcitx5-gtk" "fcitx5-qt" "fcitx5-rime"
     # other
-    'linuxqq-clipsync-git' "shorin-proton-wrapper-git"
+    "shorin-proton-wrapper-git"
 )
 
 # 系统级强制保护黑名单
@@ -368,7 +368,7 @@ run_hide_desktop_file() {
         "avahi-discover.desktop" "qv4l2.desktop" "qvidcap.desktop" "bssh.desktop"
         "org.fcitx.Fcitx5.desktop" "org.fcitx.fcitx5-migrator.desktop" "xgps.desktop"
         "xgpsspeed.desktop" "gvim.desktop" "kbd-layout-viewer5.desktop" "bvnc.desktop"
-        "yazi.desktop" "btop.desktop" "vim.desktop" "nvim.desktop" "nvtop.desktop"
+        "yazi.desktop" "btop.desktop" "vim.desktop" "nvtop.desktop"
         "mpv.desktop" "org.gnome.Settings.desktop" "thunar-settings.desktop"
         "thunar-bulk-rename.desktop" "thunar-volman-settings.desktop" "clipse-gui.desktop"
         "waypaper.desktop" "xfce4-about.desktop" "cmake-gui.desktop" "assistant.desktop"
@@ -404,22 +404,6 @@ setup_system_environment() {
     fi
     ok "$(_t "Hardware services configured." "硬件底层服务配置完成。")"
     
-    local POL_DIR="/etc/firefox/policies"
-    sudo mkdir -p "$POL_DIR" 2>/dev/null
-    sudo tee "$POL_DIR/policies.json" > /dev/null << 'EOF'
-{
-  "policies": {
-    "Extensions": {
-      "Install": [
-        "https://addons.mozilla.org/firefox/downloads/latest/pywalfox/latest.xpi",
-        "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
-      ]
-    }
-  }
-}
-EOF
-    sudo chmod 755 "$POL_DIR"
-    sudo chmod 644 "$POL_DIR/policies.json"
 }
 
 apply_user_configs() {
@@ -462,16 +446,7 @@ apply_user_configs() {
     mkdir -p "$HOME/Templates" 2>/dev/null
     touch "$HOME/Templates/new"
     echo '#!/usr/bin/env bash' > "$HOME/Templates/new.sh" && chmod +x "$HOME/Templates/new.sh"
-    
-    if command -v flatpak >/dev/null 2>&1; then
-        flatpak override --user --filesystem=xdg-data/themes >/dev/null 2>&1
-        flatpak override --user --filesystem="$HOME/.themes" >/dev/null 2>&1
-        flatpak override --user --filesystem=xdg-config/gtk-4.0 >/dev/null 2>&1
-        flatpak override --user --filesystem=xdg-config/gtk-3.0 >/dev/null 2>&1
-        flatpak override --user --env=GTK_THEME=adw-gtk3-dark >/dev/null 2>&1
-        flatpak override --user --filesystem=xdg-config/fontconfig >/dev/null 2>&1
-    fi
-    
+
     local user_themes_dir="$HOME/.local/share/themes"
     
     # 1. 检查如果是软链接 (旧版遗留)，则安全删除它
@@ -503,12 +478,6 @@ apply_user_configs() {
     
     run_hide_desktop_file
     shorin link >/dev/null 2>&1 || true
-
-    if command -v rime-llm-config >/dev/null 2>&1; then
-        info "$(_t "Initializing Rime LLM Translator (AI Input Method)..." "正在为您自动配置 Rime LLM Translator 大模型联想...")"
-        rime-llm-config init
-        echo ""
-    fi
 
     mkdir -p "$HOME/.config/niri/dms" 2>/dev/null
     touch "$HOME/.config/niri/dms/colors.kdl"
@@ -544,9 +513,6 @@ remove_dotfiles() {
     if [[ -f "$HOME/.config/gtk-3.0/gtk.css" ]]; then sed -i '/@import url("dank-colors.css");/d' "$HOME/.config/gtk-3.0/gtk.css" 2>/dev/null; fi
     rm -f "$HOME/.config/gtk-4.0/dank-colors.css" "$HOME/.config/gtk-3.0/dank-colors.css" "$HOME/.config/niri/dms/colors.kdl" 2>/dev/null
     
-    if [[ -f "/etc/firefox/policies/policies.json" ]]; then
-        sudo rm -f "/etc/firefox/policies/policies.json"
-    fi
     rm -f "$HOME/必看-Shorin-DMS-Niri使用方法.txt" 2>/dev/null
     
     ok "$(_t "Cleanup complete! Removed $removed_count files." "配置清理完成！共精准移除了 $removed_count 个配置文件。")"
@@ -573,7 +539,7 @@ remove_dotfiles() {
             # 简单列出部分，防止刷屏
             echo -e "${C_YEL}${installed_pkgs[*]}${C_DEF}" | fold -w 80 -s
             echo ""
-            warn "$(_t "Some of these packages (like firefox, kitty, fcitx5) might be used by you independently." "警告：其中某些软件（如 firefox, kitty, fcitx5）您可能在其他桌面环境下仍需要使用！")"
+            warn "$(_t "Some of these packages (like zen-browser-bin, kitty, fcitx5) might be used by you independently." "警告：其中某些软件（如 zen-browser-bin, kitty, fcitx5）您可能在其他桌面环境下仍需要使用！")"
             info "$(_t "If you want to completely remove them, review and run the following command manually:" "如果您确定不再需要它们，请自行检查并复制运行以下命令进行卸载：")"
             echo ""
             echo -e "    ${C_RED}paru -Rns ${installed_pkgs[*]}${C_DEF}"

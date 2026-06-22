@@ -1,0 +1,9 @@
+shorindms text eol=lf
+.gitattributes text eol=lf
+config.fish text eol=lf
+*.fish text eol=lf
+*.sh text eol=lf
+*.txt text eol=lf
+*.kdl text eol=lf
+*.toml text eol=lf
+*.yaml text eol=lf

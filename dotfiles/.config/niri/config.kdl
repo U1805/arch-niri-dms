@@ -95,8 +95,6 @@ spawn-at-startup "~/.config/niri/scripts/screenshot-sound.sh"
 spawn-at-startup "xhost" "+si:localuser:root"
 // dms 搜索
 spawn-at-startup "dsearch" "serve"
-// x11<--> 剪贴板同步
-spawn-at-startup "systemctl" "--user" "start" "linuxqq-clipsync"
 
 // 取消启动niri时自动开启快捷键教程
 hotkey-overlay {
@@ -123,8 +121,6 @@ window-rule {
 }
 window-rule {
     match app-id=r#"^gnome-control-center$"#
-    match app-id=r#"^pavucontrol$"#
-    match app-id=r#"^nm-connection-editor$"#
     default-column-width { proportion 0.5; }
     open-floating false
 }
@@ -136,11 +132,6 @@ window-rule {
     open-floating true
 }
 window-rule {
-    match app-id=r#"^steam$"# title=r#"^notificationtoasts_\d+_desktop$"#
-    default-floating-position x=10 y=10 relative-to="bottom-right"
-    open-focused false
-}
-window-rule {
     match app-id=r#"^org\.wezfurlong\.wezterm$"#
     match app-id="Alacritty"
     match app-id="zen"
@@ -149,7 +140,7 @@ window-rule {
     draw-border-with-background false
 }
 window-rule {
-    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    match app-id=r#"zen$"# title="^Picture-in-Picture$"
     match app-id="zoom"
     open-floating true
 }

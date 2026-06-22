@@ -26,7 +26,7 @@ x-scheme-handler/sparkle=sparkle.desktop
 application/octet-stream=vim.desktop
 
 [Added Associations]
-image/png=io.gitlab.theevilskeleton.Upscaler.desktop;satty.desktop;imv.desktop;
+image/png=satty.desktop;imv.desktop;
 video/webm=mpv.desktop;
 application/x-shellscript=code.desktop;gvim.desktop;code-oss.desktop;vim.desktop;
 video/mp4=com.github.huluti.Curtail.desktop;mpv.desktop;
@@ -39,7 +39,6 @@ text/x-csrc=org.gnome.TextEditor.desktop;gvim.desktop;vim.desktop;
 application/json=vim.desktop;
 application/x-msdownload=shorin-proton-wrapper-run-windows-program.desktop;
 application/x-zerosize=typora.desktop;vim.desktop;
-application/x-bittorrent=transmission-gtk.desktop;
 application/octet-stream=vim.desktop;
 image/svg+xml=vim.desktop;
 image/webp=swayimg.desktop;
