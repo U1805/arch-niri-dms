@@ -52,7 +52,7 @@ TARGET_SOFTWARE=(
     "kitty" "xdg-terminal-exec" "bat" "fuzzel" "wf-recorder" "wl-screenrec-git"
     "ttf-jetbrains-maple-mono-nf-xx-xx" "eza" "zoxide" "starship" "jq" "fish"
     "timg" "imagemagick" "shorin-contrib-git" "fastfetch" "gdu" "btop" "yazi"
-    "bun" "uv" "shorin-screenrec-menu-git"
+    "nodejs" "bun" "uv" "shorin-screenrec-menu-git"
     # Theming
     "bazaar" "matugen" "adw-gtk-theme" "nwg-look" "breeze-cursors"
     # Input Method
