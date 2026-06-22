@@ -2,6 +2,8 @@ patch:
   ascii_composer:
     good_old_caps_lock: true
   schema_list:
-    - schema: luna_pinyin_simp
-    - schema: double_pinyin_flypy
+    - schema: flypy_flypy
+    - schema: japanese
+    - schema: melt_eng
+    - schema: pinyin_simp
   "menu/page_size": 6

@@ -1,0 +1,11 @@
+# fcitx5.yaml — per-application IME options
+# Linux 上 Rime 的 app_options 仅在此文件生效
+app_options:
+  kitty:
+    ascii_mode: true
+  code:
+    ascii_mode: true
+  foot:
+    ascii_mode: true
+  alacritty:
+    ascii_mode: true
