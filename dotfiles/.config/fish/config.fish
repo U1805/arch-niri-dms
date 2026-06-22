@@ -36,9 +36,6 @@ end
 function 滚
 	sysup 
 end
-function raw
-	command ~/.local/bin/random-anime-wallpaper-dms $argv
-end
 
 function 安装
 	command yay -S $argv

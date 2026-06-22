@@ -14,14 +14,13 @@ binds {
     Mod+F5 hotkey-overlay-title="快速存档 Quick save" {spawn "quicksave";}
     Mod+F8 hotkey-overlay-title="快速读档 Quick load" {spawn "quickload";}
 
-    // 临时开一个浮动终端
-    Mod+Slash hotkey-overlay-title="临时终端 Quick Terminal" {spawn "kitty" "--single-instance" "--class" "quickterminal";}
     //打开浏览器
-    Mod+B hotkey-overlay-title="浏览器 Browser" { spawn "zen-browser"; }        
+    Mod+B hotkey-overlay-title="浏览器 Browser" { spawn "zen-browser"; }
+    //Pi Agent
+    Mod+A hotkey-overlay-title="AI助手 pi agent" { spawn "kitty" "--class" "pi" "-e" "pi"; }      
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
     Mod+T hotkey-overlay-title="共享终端 Terminal" { spawn "kitty" "--single-instance"; }
-    Mod+return hotkey-overlay-title="独立终端 Terminal" { spawn "kitty"; }
     Mod+P hotkey-overlay-title="提取窗口信息 Pick information" { spawn "~/.config/niri/scripts/niri-pick" "focus"; }
     // settings
     // 文档管理器。如果有thunar的话会优先打开thunar，没有的话会打开nautilus
@@ -29,11 +28,6 @@ binds {
     // 另一个打开nautilus的快捷键，主要是为了在同时安装thunar和nautilus的情况下打开nautilus
     Mod+Alt+E hotkey-overlay-title=null {spawn "env" "GSK_RENDERER=gl" "nautilus" "--new-window";}
     Mod+Z hotkey-overlay-title="程序菜单 Applauncher" { spawn-sh "dms ipc call spotlight toggle || fuzzel"; }
-    // dms 壁纸选择
-    Mod+Alt+W hotkey-overlay-title="壁纸切换 Wallpaper" { spawn "dms" "ipc" "call" "dankdash" "wallpaper";}
-    // 随机下载壁纸
-    Mod+Shift+F10 hotkey-overlay-title="随机下载壁纸 Random wallpaper" { spawn "~/.local/bin/random-anime-wallpaper-dms";}
-
     Mod+O hotkey-overlay-title="切换总览界面 toggle overview" repeat=false { toggle-overview; }
     Mod+G hotkey-overlay-title="切换总览界面 toggle overview" repeat=false { toggle-overview; }
     // 关闭聚焦窗口
@@ -53,12 +47,6 @@ binds {
     // 例如 ctrl+c居中。此时按下此键可以重新排列）
     Mod+Alt+R hotkey-overlay-title="重置侧边栏 Reorder Sidebar"  { spawn "niri-sidebar" "reorder"; }
 
-    // 以下功能需要安装nirius并启动niriusd
-    //Mod+Ctrl+G hotkey-overlay-title="在切换工作区时自动跟随 Follow when switch workspaces" {spawn "nirius" "toggle-follow-mode" ;}
-    //Mod+Shift+Q hotkey-overlay-title="快速聚焦到QQ Quick focus QQ" {spawn "nirius" "focus" "--app-id" "QQ" ;}
-    //Mod+Shift+W hotkey-overlay-title="快速聚焦到微信 Quick focus Wechat" {spawn "nirius" "focus" "--app-id" "wechat" ;}
-
-    
     // mod+鼠标中键 关闭窗口
     Mod+MouseMiddle  { close-window; }
 
@@ -158,16 +146,9 @@ binds {
     // mod+左右方括号 移动窗口（不是移动column，是允许移动到另一个column的窗口移动）
     Mod+BracketLeft  { consume-or-expel-window-left; }
     Mod+BracketRight { consume-or-expel-window-right; }
-    // mod+A/D 同效果
-    Mod+A hotkey-overlay-title="向左移动窗口 Move window to left between columns" { consume-or-expel-window-left; }
-    Mod+D hotkey-overlay-title="向右移动窗口 Move window to right between columns" { consume-or-expel-window-right; }
-
     // mod+逗号/句号 把窗口合并或者踢出当前的column
     Mod+Comma  { consume-window-into-column; }
     Mod+Period { expel-window-from-column; }
-    // mod+shift+A/D 同效果
-    Mod+Shift+A  { consume-window-into-column; }
-    Mod+Shift+D { expel-window-from-column; }
     
     // 开启column的标签页模式
     Mod+Shift+X { toggle-column-tabbed-display; }
@@ -228,7 +209,7 @@ binds {
     // === DMS 特有组件 ===
     // 电源菜单 (Super+X)
     Super+X hotkey-overlay-title="Power Menu: Toggle" { spawn "dms" "ipc" "call" "powermenu" "toggle"; }
-    // 壁纸选择器 (Mod+Y，作为 Mod+Alt+W 的备用)
+    // 壁纸选择器
     Mod+Y hotkey-overlay-title="Browse Wallpapers" { spawn "dms" "ipc" "call" "dankdash" "wallpaper"; }
     // 剪贴板
     Mod+Alt+V hotkey-overlay-title="剪贴板 Clipboard" {spawn "dms" "ipc" "call" "clipboard" "toggle";} 
