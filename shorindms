@@ -28,12 +28,12 @@ step() { echo -e "\n${C_CYA}>>> $1${C_DEF}"; }
 # ==========================================
 # 2. 全局变量与核心配置
 # ==========================================
-TEMPLATE_DIR="/usr/share/shorin-dms-niri"
-BASE_BACKUP_DIR="$HOME/.cache/shorin-dms-niri-backup"
+TEMPLATE_DIR="/usr/share/arch-niri-dms"
+BASE_BACKUP_DIR="$HOME/.cache/arch-niri-dms-backup"
 BACKUP_DIR="$BASE_BACKUP_DIR/$(date +%Y%m%d_%H%M%S)"
 
-USER_IGNORE_FILE="$HOME/.config/shorin-dms-niri/protected.list"
-CACHE_FILE="$HOME/.cache/shorin-dms-niri-software.cache"
+USER_IGNORE_FILE="$HOME/.config/arch-niri-dms/protected.list"
+CACHE_FILE="$HOME/.cache/arch-niri-dms-software.cache"
 
 # ==========================================
 # 3. 软件清单列表 (核心之外的所有组件)
@@ -245,7 +245,7 @@ manage_protection() {
     if [[ "$action" == "list" ]]; then
         info "$(_t "System protected paths (Hardcoded):" "系统内置保护路径 (硬编码):")"
         for i in "${UPDATE_IGNORE[@]}"; do echo "  - $i"; done
-        info "$(_t "User protected paths (~/.config/shorin-dms-niri/protected.list):" "用户自定义保护路径:")"
+        info "$(_t "User protected paths (~/.config/arch-niri-dms/protected.list):" "用户自定义保护路径:")"
         if [[ -s "$USER_IGNORE_FILE" ]]; then
             sed 's/^/  - /' "$USER_IGNORE_FILE"
         else
@@ -482,7 +482,7 @@ apply_user_configs() {
     mkdir -p "$HOME/.config/niri/dms" 2>/dev/null
     touch "$HOME/.config/niri/dms/colors.kdl"
     
-    local doc_src="/usr/share/doc/shorin-dms-niri/README-DMS.txt"
+    local doc_src="/usr/share/doc/arch-niri-dms/README-DMS.txt"
     if [[ -f "$doc_src" ]]; then
         cp -n "$doc_src" "$HOME/必看-Shorin-DMS-Niri使用方法.txt" 2>/dev/null || true
     fi

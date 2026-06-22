@@ -1,0 +1,12 @@
+# --- Standard Packages ---
+baobab                                   # GUI Disk Usage Analyzer
+mission-center                           # System Monitor (Task Manager style)
+gparted                                  # Disk Management Utility (Disks)
+gnome-font-viewer                        # manage fonts easily
+gnome-calendar                           # calendar
+gnome-clocks                             # clocks
+wine                                     # run windows exe
+virt-manager                             # KVM qemu virtual machine
+mousepad                                 # a minimal notebook or so called "text editor"
+zen-browser-bin                          # Zen Browser (AUR)
+sparkle-bin                              # Sparkle (AUR) 
