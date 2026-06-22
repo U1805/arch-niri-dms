@@ -16,8 +16,15 @@ check_root
 
 section "Phase 2b" "GPU Driver Setup"
 
-DETECTED_USER=$(awk -F: '$3 == 1000 {print $1}' /etc/passwd)
-TARGET_USER="${DETECTED_USER:-$(read -p "Target user: " u && echo $u)}"
+log "Identifying target user..."
+detect_target_user
+
+if [[ -z "$TARGET_USER" || ! -d "$HOME_DIR" ]]; then
+    error "Target user invalid or home directory does not exist."
+    exit 1
+fi
+
+info_kv "Target" "$TARGET_USER"
 
 #--------------sudo temp file--------------------#
 SUDO_TEMP_FILE="/etc/sudoers.d/99_shorin_installer_temp"

@@ -24,14 +24,12 @@ trap 'echo -e "\n   ${H_YELLOW}>>> Operation cancelled by user (Ctrl+C). Skippin
 section "Phase 5" "Common Applications"
 
 log "Identifying target user..."
-DETECTED_USER=$(awk -F: '$3 == 1000 {print $1}' /etc/passwd)
+detect_target_user
 
-if [ -n "$DETECTED_USER" ]; then
-    TARGET_USER="$DETECTED_USER"
-else
-    read -p "   Please enter the target username: " TARGET_USER
+if [[ -z "$TARGET_USER" || ! -d "$HOME_DIR" ]]; then
+    error "Target user invalid or home directory does not exist."
+    exit 1
 fi
-HOME_DIR="/home/$TARGET_USER"
 info_kv "Target" "$TARGET_USER"
 
 # Helper function for user commands

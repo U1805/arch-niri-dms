@@ -51,7 +51,7 @@ run_as_root() {
 
 # --- [配置区域] ---
 TARGET_BRANCH="${BRANCH:-main}"
-TARBALL_URL="https://github.com/U1805/arch-niri-dms/archive/refs/heads/${TARGET_BRANCH}.tar.gz"
+TARBALL_URL="https://gh-proxy.org/https://github.com/U1805/arch-niri-dms/archive/refs/heads/${TARGET_BRANCH}.tar.gz"
 TARGET_DIR="/tmp/arch-niri-dms"
 
 # 预估源码压缩包体积。实际测得约为 60MB，预留余量 100M，确保进度条平滑。

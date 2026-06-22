@@ -20,30 +20,7 @@ section "Verification" "Auditing System State"
 # 1. 特殊环境启发式验证 (仅针对 Shorin DMS 系列)
 # ==============================================================================
 
-# if [[ "$DESKTOP_ENV" == "shorindms" || "$DESKTOP_ENV" == "shorindmsgit" ]]; then
-#     log "Performing specialized heuristic checks for DMS blackbox..."
-#     DMS_ERRORS=0
-
-#     if ! command -v quickshell &>/dev/null && ! pacman -Qq | grep -q "quickshell"; then
-#         echo -e "   \033[1;31m->\033[0m \033[1;33mquickshell (or related package)\033[0m is MISSING!"
-#         DMS_ERRORS=1
-#     fi
-
-#     if ! command -v dms &>/dev/null && ! pacman -Qq | grep -q "dms-shell"; then
-#         echo -e "   \033[1;31m->\033[0m \033[1;33mdms-shell (or related package)\033[0m is MISSING!"
-#         DMS_ERRORS=1
-#     fi
-
-#     if [ "$DMS_ERRORS" -ne 0 ]; then
-#         echo ""
-#         error "DMS CORE VALIDATION FAILED!"
-#         write_log "FATAL" "DMS heuristic validation failed. quickshell or dms-shell is missing."
-#         echo -e "   ${H_YELLOW}>>> Exiting installer. The official DMS script might have failed. ${NC}"
-#         exit 1
-#     else
-#         success "DMS core components verified."
-#     fi
-# fi
+# 启发式检查已移除；包清单验证覆盖所有关键组件。
 
 # ==============================================================================
 # 2. 清单统实验证 (发货单对账)
@@ -101,12 +78,6 @@ else
     log "Auditing dotfiles for ${DESKTOP_ENV^^}..."
     
     case "$DESKTOP_ENV" in
-        shorinniri)
-            check_config_exists "$HOME_DIR/.config/niri"
-            check_config_exists "$HOME_DIR/.config/waybar"
-            check_config_exists "$HOME_DIR/.config/matugen"
-            check_config_exists "$HOME_DIR/.config/waypaper"
-        ;;
         shorindms|shorindmsgit)
             check_config_exists "$HOME_DIR/.config/niri/dms"
         ;;
