@@ -163,9 +163,9 @@ if [ ${#REPO_APPS[@]} -gt 0 ]; then
 
     if [ ${#REPO_QUEUE[@]} -gt 0 ]; then
         BATCH_LIST="${REPO_QUEUE[*]}"
-        info_kv "Installing" "${#REPO_QUEUE[@]} packages via Pacman/Yay"
+        info_kv "Installing" "${#REPO_QUEUE[@]} packages via Pacman/Paru"
         
-        if ! exe as_user yay -Syu --noconfirm --needed --answerdiff=None --answerclean=None $BATCH_LIST; then
+        if ! exe as_user paru -Syu --noconfirm --needed --answerdiff=None --answerclean=None $BATCH_LIST; then
             error "Batch installation failed. Some repo packages might be missing."
             for pkg in "${REPO_QUEUE[@]}"; do
                 FAILED_PACKAGES+=("repo:$pkg")
@@ -263,7 +263,7 @@ if command -v wine &>/dev/null; then
     if curl -fsSL --retry 3 -o "$FONT_DEST/$filename" "$url"; then
       chown "$TARGET_USER:" "$FONT_DEST/$filename"
     else
-      warning "Failed to download $url"
+      warn "Failed to download $url"
       font_ok=false
     fi
   done

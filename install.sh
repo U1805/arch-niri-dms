@@ -28,7 +28,7 @@ trap cleanup_on_exit EXIT
 # --- Environment ---
 export DEBUG=${DEBUG:-0}
 export CN_MIRROR=${CN_MIRROR:-0}
-export DESKTOP_ENV="shorindmsgit"
+export DESKTOP_ENV="shorindms"
 export DESKTOP_LABEL="Shorin_DMS_Niri"
 
 # Personal fork preset: the installer is intentionally reduced to one route.
@@ -270,7 +270,6 @@ clean_intermediate_snapshots() {
     
     local KEEP_MARKERS=(
         "Before Desktop Environments"
-        "Before Niri Setup"
     )
     
     if ! snapper -c "$config_name" list &>/dev/null; then
@@ -389,7 +388,7 @@ echo -e "${H_YELLOW}>>> System requires a REBOOT.${NC}"
 
 while read -r -t 0; do read -r; done
 
-for i in {10..1}; do
+for ((i=10; i>=1; i--)); do
     echo -ne "\r   ${DIM}Auto-rebooting in ${i}s... (Press 'n' to cancel)${NC}"
     
     read -t 1 -n 1 input

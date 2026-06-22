@@ -49,7 +49,6 @@ critical_failure_handler() {
     local failed_reason="$1"
     trap - ERR
     echo -e "\n\033[0;31m[CRITICAL FAILURE] $failed_reason\033[0m\n"
-    # 这里省略了你原有的报错大框框，保持原有逻辑即可
     exit 1
 }
 trap 'critical_failure_handler "Script Error at Line $LINENO"' ERR
@@ -133,7 +132,7 @@ for url in "${WALLPAPER_URLS[@]}"; do
     filename="${url##*/}"
     log "  -> $filename"
     curl -fsSL --retry 3 -o "$WALLPAPER_DIR/$filename" "$url" || {
-        warning "Failed to download $url"
+        warn "Failed to download $url"
     }
 done
 chown -R "$TARGET_USER:" "$WALLPAPER_DIR"
@@ -145,12 +144,12 @@ section "Shorin DMS" "Rime Schema"
 
 RIME_DIR="$HOME_DIR/.local/share/fcitx5/rime"
 RIME_CLONE="/tmp/rime-schema"
-RIME_REPO="https://github.com/U1805/rime.git"
+RIME_REPO="https://gh-proxy.org/https://github.com/U1805/rime.git"
 
 log "Cloning U1805/rime schema from $RIME_REPO..."
 rm -rf "$RIME_CLONE"
 if ! git clone --depth 1 "$RIME_REPO" "$RIME_CLONE"; then
-    warning "Failed to clone U1805/rime; Rime schema will use system defaults"
+    warn "Failed to clone U1805/rime; Rime schema will use system defaults"
 else
     as_user mkdir -p "$RIME_DIR"
     # 不覆盖已有用户词库和同步配置
@@ -187,7 +186,7 @@ if as_user bun add -g --ignore-scripts @earendil-works/pi-coding-agent; then
     as_user ln -sf "$HOME_DIR/.bun/bin/pi" "$HOME_DIR/.local/bin/pi" 2>/dev/null || true
     success "pi-coding-agent installed"
 else
-    warning "Failed to install pi-coding-agent (network issue?)"
+    warn "Failed to install pi-coding-agent (network issue?)"
 fi
 
 # ==============================================================================

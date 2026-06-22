@@ -77,14 +77,7 @@ else
     
     log "Auditing dotfiles for ${DESKTOP_ENV^^}..."
     
-    case "$DESKTOP_ENV" in
-        shorindms|shorindmsgit)
-            check_config_exists "$HOME_DIR/.config/niri/dms"
-        ;;
-        *)
-            log "No specific config checks mapped for $DESKTOP_ENV. Skipping."
-        ;;
-    esac
+    check_config_exists "$HOME_DIR/.config/niri/dms"
     
     if [ "$CONFIG_ERRORS" -gt 0 ]; then
         echo ""
