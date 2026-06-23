@@ -1,13 +1,24 @@
-# --- Standard Packages ---
+# --- Standard Packages (System) ---
 baobab                                   # GUI Disk Usage Analyzer
 mission-center                           # System Monitor (Task Manager style)
 gparted                                  # Disk Management Utility (Disks)
 gnome-font-viewer                        # manage fonts easily
 gnome-calendar                           # calendar
 gnome-clocks                             # clocks
-snap-pac
+snap-pac                                 # pacman hook for snapper snapshots
 wine                                     # run windows exe
 virt-manager                             # KVM qemu virtual machine
 mousepad                                 # a minimal notebook or so called "text editor"
-zen-browser-bin                          # Zen Browser (AUR)
-sparkle-bin                              # Sparkle (AUR) 
+lazyvim                                  # Great preset of neovim
+# --- AUR Packages ---
+AUR:sparkle-bin                          # Sparkle Clash GUI
+# --- Flatpak Packages (User) ---
+flatpak:com.rustdesk.Rustdesk            # remote desktop
+flatpak:app.zen_browser.zen              # Zen Browser (Firefox-based)
+flatpak:it.mijorus.gearlever             # AppImage manager
+flatpak:com.qq.QQ                        # Tencent QQ
+flatpak:com.spotify.Client               # Spotify music streaming
+flatpak:com.tencent.WeChat               # WeChat
+flatpak:com.tencent.wemeet               # Tencent Meeting (Wemeet)
+flatpak:com.wps.Office                   # WPS Office suite
+flatpak:md.obsidian.Obsidian             # Obsidian note-taking

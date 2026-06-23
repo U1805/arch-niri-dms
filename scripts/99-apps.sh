@@ -8,6 +8,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(dirname "$SCRIPT_DIR")"
 source "$SCRIPT_DIR/00-utils.sh"
 
+# --- [CONFIGURATION] ---
+# LazyVim 硬性依赖列表 (Moved from niri-setup)
+LAZYVIM_DEPS=("neovim" "ripgrep" "fd" "ttf-jetbrains-mono-nerd" "git" "lazygit")
+
 check_root
 
 # Ensure FZF is installed
@@ -44,7 +48,10 @@ LIST_FILENAME="common-applist.txt"
 LIST_FILE="$PARENT_DIR/$LIST_FILENAME"
 
 REPO_APPS=()
+AUR_APPS=()
+FLATPAK_APPS=()
 FAILED_PACKAGES=()
+INSTALL_LAZYVIM=false
 
 if [ ! -f "$LIST_FILE" ]; then
     warn "File $LIST_FILENAME not found. Skipping."
@@ -121,7 +128,7 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# 2. Categorize Selection & Strip Prefixes
+# 2. Categorize Selection & Strip Prefixes (Includes LazyVim Check)
 # ------------------------------------------------------------------------------
 log "Processing selection..."
 
@@ -129,15 +136,31 @@ while IFS= read -r line; do
     raw_pkg=$(echo "$line" | cut -f1 -d$'\t' | xargs)
     [[ -z "$raw_pkg" ]] && continue
 
-    REPO_APPS+=("$raw_pkg")
+    # Check for LazyVim explicitly (Case insensitive check)
+    if [[ "${raw_pkg,,}" == "lazyvim" ]]; then
+        INSTALL_LAZYVIM=true
+        REPO_APPS+=("${LAZYVIM_DEPS[@]}")
+        info_kv "Config" "LazyVim detected" "Setup deferred to Post-Install"
+        continue
+    fi
+
+    if [[ "$raw_pkg" == flatpak:* ]]; then
+        clean_name="${raw_pkg#flatpak:}"
+        FLATPAK_APPS+=("$clean_name")
+    elif [[ "$raw_pkg" == AUR:* ]]; then
+        clean_name="${raw_pkg#AUR:}"
+        AUR_APPS+=("$clean_name")
+    else
+        REPO_APPS+=("$raw_pkg")
+    fi
 done <<< "$SELECTED_RAW"
 
-info_kv "Scheduled" "Repo: ${#REPO_APPS[@]}"
+info_kv "Scheduled" "Repo: ${#REPO_APPS[@]}" "AUR: ${#AUR_APPS[@]}" "Flatpak: ${#FLATPAK_APPS[@]}"
 
 # ------------------------------------------------------------------------------
 #[SETUP] GLOBAL SUDO CONFIGURATION
 # ------------------------------------------------------------------------------
-if [ ${#REPO_APPS[@]} -gt 0 ]; then
+if [ ${#REPO_APPS[@]} -gt 0 ] || [ ${#AUR_APPS[@]} -gt 0 ]; then
     log "Configuring temporary NOPASSWD for installation..."
     SUDO_TEMP_FILE="/etc/sudoers.d/99_shorin_installer_apps"
     echo "$TARGET_USER ALL=(ALL) NOPASSWD: ALL" > "$SUDO_TEMP_FILE"
@@ -178,9 +201,64 @@ if [ ${#REPO_APPS[@]} -gt 0 ]; then
     fi
 fi
 
+# --- B. Install AUR Apps (INDIVIDUAL MODE + RETRY) ---
+if [ ${#AUR_APPS[@]} -gt 0 ]; then
+    section "Step 2/3" "AUR Packages "
+    
+    for app in "${AUR_APPS[@]}"; do
+        if pacman -Qi "$app" &>/dev/null; then
+            log "Skipping '$app' (Already installed)."
+            continue
+        fi
+
+
+        log "Installing AUR: $app ..."
+        install_success=false
+        max_retries=1
+        
+        for (( i=0; i<=max_retries; i++ )); do
+            if [ $i -gt 0 ]; then
+                warn "Retry $i/$max_retries for '$app' ..."
+            fi
+            
+            if as_user yay -Syu --noconfirm --needed --answerdiff=None --answerclean=None "$app"; then
+                install_success=true
+                success "Installed $app"
+                break
+            else
+                warn "Attempt $((i+1)) failed for $app"
+            fi
+        done
+
+        if [ "$install_success" = false ]; then
+            error "Failed to install $app after $((max_retries+1)) attempts."
+            FAILED_PACKAGES+=("aur:$app")
+        fi
+    done
+fi
+
+# --- C. Install Flatpak Apps (INDIVIDUAL MODE) ---
+if [ ${#FLATPAK_APPS[@]} -gt 0 ]; then
+    section "Step 3/3" "Flatpak Packages (Individual)"
+    
+    for app in "${FLATPAK_APPS[@]}"; do
+        if flatpak info "$app" &>/dev/null; then
+            log "Skipping '$app' (Already installed)."
+            continue
+        fi
+
+        log "Installing Flatpak: $app ..."
+        if ! exe flatpak install -y flathub "$app"; then
+            error "Failed to install: $app"
+            FAILED_PACKAGES+=("flatpak:$app")
+        else
+            success "Installed $app"
+        fi
+    done
+fi
 
 # ------------------------------------------------------------------------------
-# 4. Environment & Additional Configs
+# 4. Environment & Additional Configs (Virt/Wine/Steam/LazyVim)
 # ------------------------------------------------------------------------------
 section "Post-Install" "System & App Tweaks"
 
@@ -281,6 +359,40 @@ if command -v wine &>/dev/null; then
   fi
 
   success "Wine fonts installed and cache refresh triggered."
+fi
+
+# --- [MOVED] LazyVim Configuration ---
+if [ "$INSTALL_LAZYVIM" = true ]; then
+  section "Config" "Applying LazyVim Overrides"
+  NVIM_CFG="$HOME_DIR/.config/nvim"
+
+  if [ -d "$NVIM_CFG" ]; then
+    BACKUP_PATH="$HOME_DIR/.config/nvim.old.apps.$(date +%s)"
+    warn "Collision detected. Moving existing nvim config to $BACKUP_PATH"
+    mv "$NVIM_CFG" "$BACKUP_PATH"
+  fi
+
+  log "Cloning LazyVim starter..."
+  if as_user git clone https://github.com/LazyVim/starter "$NVIM_CFG"; then
+    rm -rf "$NVIM_CFG/.git"
+    
+    # === 自动配置 fcitx5 切换 ===
+    log "Applying fcitx5-remote fix to init.lua..."
+    as_user bash -c "cat >> '$NVIM_CFG/init.lua'" << 'EOF'
+
+-- fcitx5 状态切换与恢复
+local fcitx_st = ""
+vim.api.nvim_create_autocmd("InsertLeave", { callback = function() fcitx_st = vim.fn.system("fcitx5-remote"); vim.fn.jobstart("fcitx5-remote -c") end })
+vim.api.nvim_create_autocmd("InsertEnter", { callback = function() if fcitx_st:match("2") then vim.fn.jobstart("fcitx5-remote -o") end end })
+vim.api.nvim_create_autocmd("VimEnter", { callback = function() vim.fn.jobstart("fcitx5-remote -c") end })
+
+EOF
+    # =================================
+
+    success "LazyVim installed (Override) with Fcitx5 fix."
+  else
+    error "Failed to clone LazyVim."
+  fi
 fi
 
 # --- hide desktop ---

@@ -14,7 +14,7 @@ log ">>> Starting Phase 2: Essential (Must-have) Software & Drivers"
 # ------------------------------------------------------------------------------
 # 1. Btrfs Assistants & GRUB Snapshot Integration
 # ------------------------------------------------------------------------------
-section "Step 1/8" "Btrfs Snapshot Integration"
+section "Step 1/9" "Btrfs Snapshot Integration"
 
 ROOT_FSTYPE=$(findmnt -n -o FSTYPE /)
 if [ "$ROOT_FSTYPE" == "btrfs" ]; then
@@ -71,7 +71,7 @@ fi
 # ------------------------------------------------------------------------------
 # 2. Audio & Video
 # ------------------------------------------------------------------------------
-section "Step 2/8" "Audio & Video"
+section "Step 2/9" "Audio & Video"
 
 log "Installing firmware..."
 exe pacman -S --noconfirm --needed sof-firmware alsa-ucm-conf alsa-firmware
@@ -85,7 +85,7 @@ success "Audio setup complete."
 # ------------------------------------------------------------------------------
 # 3. Locale
 # ------------------------------------------------------------------------------
-section "Step 3/8" "Locale Configuration"
+section "Step 3/9" "Locale Configuration"
 
 # 标记是否需要重新生成
 NEED_GENERATE=false
@@ -125,7 +125,7 @@ fi
 # ------------------------------------------------------------------------------
 # 4. Input Method
 # ------------------------------------------------------------------------------
-section "Step 4/8" "Input Method (Fcitx5)"
+section "Step 4/9" "Input Method (Fcitx5)"
 
 exe pacman -S --noconfirm --needed fcitx5-im fcitx5-rime
 
@@ -134,7 +134,7 @@ success "Fcitx5 installed."
 # ------------------------------------------------------------------------------
 # 5. Bluetooth (Smart Detection)
 # ------------------------------------------------------------------------------
-section "Step 5/8" "Bluetooth"
+section "Step 5/9" "Bluetooth"
 
 # Ensure detection tools are present
 log "Detecting Bluetooth hardware..."
@@ -165,7 +165,7 @@ fi
 # ------------------------------------------------------------------------------
 # 6. Power
 # ------------------------------------------------------------------------------
-section "Step 6/8" "Power Management"
+section "Step 6/9" "Power Management"
 
 exe pacman -S --noconfirm --needed power-profiles-daemon
 exe systemctl enable --now power-profiles-daemon
@@ -174,7 +174,7 @@ success "Power profiles daemon enabled."
 # ------------------------------------------------------------------------------
 # 7. Fastfetch
 # ------------------------------------------------------------------------------
-section "Step 7/8" "Fastfetch"
+section "Step 7/9" "Fastfetch"
 
 exe pacman -S --noconfirm --needed fastfetch gdu btop cmatrix lolcat sl
 success "Fastfetch installed."
@@ -182,7 +182,7 @@ success "Fastfetch installed."
 # ------------------------------------------------------------------------------
 # 8. Pacman UI
 # ------------------------------------------------------------------------------
-section "Step 8/8" "Pacman UI"
+section "Step 8/9" "Pacman UI"
 
 if grep -q "^ILoveCandy" /etc/pacman.conf; then
     success "Pacman candy progress bar is already enabled."
@@ -196,6 +196,27 @@ else
         echo "ILoveCandy" >> /etc/pacman.conf
     fi
     success "Pacman candy progress bar enabled."
+fi
+
+# ------------------------------------------------------------------------------
+# 9. Flatpak
+# ------------------------------------------------------------------------------
+section "Step 9/9" "Flatpak"
+
+exe pacman -S --noconfirm --needed flatpak
+exe flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+CURRENT_TZ=$(readlink -f /etc/localtime)
+IS_CN_ENV=false
+if [[ "$CURRENT_TZ" == *"Shanghai"* ]] || [ "$CN_MIRROR" == "1" ] || [ "$DEBUG" == "1" ]; then
+    IS_CN_ENV=true
+    info_kv "Region" "China Optimization Active"
+fi
+
+if [ "$IS_CN_ENV" = true ]; then
+    select_flathub_mirror
+else
+    log "Using Global Sources."
 fi
 
 log "Module 02 completed."

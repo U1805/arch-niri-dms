@@ -119,13 +119,17 @@ section "Shorin DMS" "Wallpapers & Tutorials"
 
 log "Downloading wallpapers..."
 WALLPAPER_DIR="$HOME_DIR/Pictures/Wallpapers"
-WALLPAPER_URLS=(
-    "https://chibisafe.lemonade-jam.de5.net/yVBR6MVryq5s.png"
-    "https://chibisafe.lemonade-jam.de5.net/hpXA4W8AAO0a.png"
-    "https://chibisafe.lemonade-jam.de5.net/HFs38EKZJlmy.png"
-    "https://chibisafe.lemonade-jam.de5.net/2hQ5DcFgejPo.png"
-    "https://chibisafe.lemonade-jam.de5.net/ki1eFH2sX89i.png"
-)
+WALLPAPERS_FILE="$PARENT_DIR/wallpapers.txt"
+WALLPAPER_URLS=()
+if [[ -f "$WALLPAPERS_FILE" ]]; then
+    while IFS= read -r url; do
+        # 跳过空行和 # 开头的注释行
+        [[ -z "$url" || "$url" == \#* ]] && continue
+        WALLPAPER_URLS+=("$url")
+    done < "$WALLPAPERS_FILE"
+else
+    warn "$WALLPAPERS_FILE not found, skipping wallpaper download"
+fi
 
 as_user mkdir -p "$WALLPAPER_DIR"
 for url in "${WALLPAPER_URLS[@]}"; do
@@ -188,6 +192,32 @@ if as_user bun add -g --ignore-scripts @earendil-works/pi-coding-agent; then
 else
     warn "Failed to install pi-coding-agent (network issue?)"
 fi
+
+# --- EasyTier (内网穿透) ---
+log "Installing EasyTier (P2P VPN)..."
+
+EASYTIER_VER="2.4.5"
+EASYTIER_ZIP="easytier-linux-x86_64-v${EASYTIER_VER}.zip"
+EASYTIER_URL="https://gh-proxy.org/https://github.com/EasyTier/EasyTier/releases/download/v${EASYTIER_VER}/${EASYTIER_ZIP}"
+EASYTIER_TMP="/tmp/easytier_install"
+
+rm -rf "$EASYTIER_TMP"
+mkdir -p "$EASYTIER_TMP"
+
+if curl -fsSL --retry 3 -o "$EASYTIER_TMP/$EASYTIER_ZIP" "$EASYTIER_URL"; then
+    unzip -qo "$EASYTIER_TMP/$EASYTIER_ZIP" -d "$EASYTIER_TMP"
+    # 只保留 easytier-cli 和 easytier-core 到 /usr/bin，其余清理
+    if [[ -f "$EASYTIER_TMP/easytier-cli" && -f "$EASYTIER_TMP/easytier-core" ]]; then
+        install -Dm755 "$EASYTIER_TMP/easytier-cli" /usr/bin/easytier-cli
+        install -Dm755 "$EASYTIER_TMP/easytier-core" /usr/bin/easytier-core
+        success "EasyTier v${EASYTIER_VER} installed"
+    else
+        warn "EasyTier binaries not found in archive; expected easytier-cli and easytier-core"
+    fi
+else
+    warn "Failed to download EasyTier from $EASYTIER_URL"
+fi
+rm -rf "$EASYTIER_TMP"
 
 # ==============================================================================
 # Finalization & Auto-Login
