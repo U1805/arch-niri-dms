@@ -78,7 +78,7 @@ section "Shorin DMS" "Installing Core Environment"
 # as the installer; $PARENT_DIR is the repo root.
 DMS_ROOT="$PARENT_DIR"
 CORE_DEPS=(
-    git bash dms-shell-niri xwayland-satellite
+    git bash dms-shell-niri xwayland-satellite unzip
     libnotify power-profiles-daemon wl-clipboard cliphist cava
     dgop dsearch-bin qt5-multimedia cups-pk-helper kimageformats
 )
