@@ -12,10 +12,12 @@ mousepad                                 # a minimal notebook or so called "text
 lazyvim                                  # Great preset of neovim
 # --- AUR Packages ---
 AUR:sparkle-bin                          # Sparkle Clash GUI
+AUR:zen-browser-bin                      # Zen Browser (Firefox-based)
 # --- Flatpak Packages (User) ---
-flatpak:com.rustdesk.Rustdesk            # remote desktop
-flatpak:app.zen_browser.zen              # Zen Browser (Firefox-based)
+flatpak:com.rustdesk.Rustdesk            # Remote desktop
 flatpak:it.mijorus.gearlever             # AppImage manager
+flatpak:com.google.Chrome                # Google Chrome
+flatpak:org.keepassxc.KeePassXC          # Password manager
 flatpak:com.qq.QQ                        # Tencent QQ
 flatpak:com.spotify.Client               # Spotify music streaming
 flatpak:com.tencent.WeChat               # WeChat
