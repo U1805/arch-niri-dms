@@ -14,7 +14,7 @@ lazyvim                                  # Great preset of neovim
 AUR:sparkle-bin                          # Sparkle Clash GUI
 AUR:zen-browser-bin                      # Zen Browser (Firefox-based)
 # --- Flatpak Packages (User) ---
-flatpak:com.rustdesk.Rustdesk            # Remote desktop
+flatpak:com.rustdesk.RustDesk            # Remote desktop
 flatpak:it.mijorus.gearlever             # AppImage manager
 flatpak:com.google.Chrome                # Google Chrome
 flatpak:org.keepassxc.KeePassXC          # Password manager
