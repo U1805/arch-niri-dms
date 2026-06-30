@@ -37,3 +37,5 @@ output_path = '~/.config/fastfetch/config.jsonc'
 input_path = '~/.config/matugen/templates/fuzzel.ini'
 output_path = '~/.config/fuzzel/colors.ini'
 
+
+

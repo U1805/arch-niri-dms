@@ -24,3 +24,4 @@ flatpak:com.tencent.WeChat               # WeChat
 flatpak:com.tencent.wemeet               # Tencent Meeting (Wemeet)
 flatpak:com.wps.Office                   # WPS Office suite
 flatpak:md.obsidian.Obsidian             # Obsidian note-taking
+flatpak:org.telegram.desktop             # Telegram
