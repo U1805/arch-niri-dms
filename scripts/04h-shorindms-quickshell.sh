@@ -110,17 +110,6 @@ install -Dm755 "$DMS_ROOT/shorindms" /usr/bin/shorindms
 if [[ -f "$DMS_ROOT/README-DMS.txt" ]]; then
   install -Dm644 "$DMS_ROOT/README-DMS.txt" /usr/share/doc/arch-niri-dms/README-DMS.txt
 fi
-# nautiles bookmarks
-GTK3_BOOKMARKS="$HOME_DIR/.config/gtk-3.0/bookmarks"
-cat >"$GTK3_BOOKMARKS" <<EOF
-file://${HOME_DIR}/Documents Documents
-file://${HOME_DIR}/Pictures Pictures
-file://${HOME_DIR}/Videos Videos
-file://${HOME_DIR}/Music Music
-file://${HOME_DIR}/Downloads Downloads
-EOF
-chown "$TARGET_USER:" "$GTK3_BOOKMARKS"
-chmod 644 "$GTK3_BOOKMARKS"
 
 # ==============================================================================
 # STEP 3: Initialize Dotfiles & Environment
