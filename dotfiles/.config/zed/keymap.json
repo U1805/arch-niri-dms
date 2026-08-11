@@ -1,0 +1,54 @@
+// Zed keymap
+//
+// For information on binding keys, see the Zed
+// documentation: https://zed.dev/docs/key-bindings
+//
+// To see the default key bindings run `zed: open default keymap`
+// from the command palette.
+[
+  // better copy
+  {
+    "context": "Editor",
+    "bindings": {
+      "ctrl-shift-c": "editor::Copy"
+    }
+  },
+  // dock 跳转
+  {
+    "context": "SkillCreator > Editor",
+    "unbind": {
+      "ctrl-w": "workspace::CloseWindow"
+    }
+  },
+  {
+    "context": "SkillCreator",
+    "unbind": {
+      "ctrl-w": "workspace::CloseWindow"
+    }
+  },
+  {
+    "context": "SettingsWindow",
+    "unbind": {
+      "ctrl-w": "workspace::CloseWindow"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == normal",
+    "bindings": {
+      "ctrl-w h": "workspace::ActivatePaneLeft",
+      "ctrl-w j": "workspace::ActivatePaneDown",
+      "ctrl-w k": "workspace::ActivatePaneUp",
+      "ctrl-w l": "workspace::ActivatePaneRight",
+    }
+  },
+  {
+    "context": "Terminal || Dock",
+    "bindings": {
+      "ctrl-w h": "workspace::ActivatePaneLeft",
+      "ctrl-w j": "workspace::ActivatePaneDown",
+      "ctrl-w k": "workspace::ActivatePaneUp",
+      "ctrl-w l": "workspace::ActivatePaneRight",
+      "ctrl-w w": "editor::ToggleFocus",
+    }
+  }
+]

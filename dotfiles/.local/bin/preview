@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Installed as a direct user command by the dotfiles deployment stage.
+
+usage() { printf 'Usage: preview PATH\n'; }
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || {
+    printf 'preview: missing dependency: %s\nInstall it with:\n  sudo pacman -S --needed %s\n' "$1" "$2" >&2
+    exit 127
+  }
+}
+[[ "${1:-}" != -h && "${1:-}" != --help ]] || { usage; exit 0; }
+[[ $# -eq 1 ]] || { usage >&2; exit 2; }
+target=$1
+[[ -e "$target" ]] || { printf 'preview: path does not exist: %s\n' "$target" >&2; exit 1; }
+
+if [[ -d "$target" ]]; then
+  if command -v eza >/dev/null; then exec eza --tree --level=2 --icons -- "$target"
+  else exec find "$target" -maxdepth 2 -printf '%y %p\n'; fi
+fi
+
+require_command file file
+mime=$(file -bL --mime-type -- "$target")
+printf '\033[1;36mType: %s\033[0m\n' "$mime"
+
+case "$mime" in
+  image/*) require_command chafa chafa; exec chafa -- "$target" ;;
+  video/*) require_command mpv mpv; exec mpv --hwdec=auto --vo=kitty --quiet -- "$target" ;;
+  audio/*)
+    require_command mpv mpv
+    if command -v cava >/dev/null 2>&1 && [[ -t 0 && -t 1 ]]; then
+      mpv --no-video --no-terminal --quiet -- "$target" >/dev/null 2>&1 &
+      player_pid=$!
+      stop_player() {
+        kill "$player_pid" 2>/dev/null || true
+        wait "$player_pid" 2>/dev/null || true
+      }
+      trap stop_player EXIT INT TERM
+      cava
+      stop_player
+      trap - EXIT INT TERM
+    else
+      exec mpv --no-video -- "$target"
+    fi ;;
+  application/json)
+    require_command jq jq
+    if [[ -t 1 ]]; then require_command less less; jq -C . -- "$target" | less -R
+    else jq . -- "$target"; fi ;;
+  text/*|application/xml|application/x-shellscript)
+    if command -v bat >/dev/null; then exec bat --color=always --style=header,grid -- "$target"
+    else exec sed -n '1,300p' -- "$target"; fi ;;
+  application/pdf) require_command pdftotext poppler; pdftotext -l 1 "$target" - | sed -n '1,60p' ;;
+  application/zip|application/x-7z-compressed|application/vnd.rar|application/x-rar|application/x-tar|application/gzip|application/x-gzip|application/x-bzip2)
+    if command -v bsdtar >/dev/null; then exec bsdtar -tf "$target"
+    elif command -v 7z >/dev/null; then exec 7z l -- "$target"
+    else require_command tar tar; exec tar -tf "$target"; fi ;;
+  *) require_command xxd vim; xxd -l 320 -- "$target" ;;
+esac

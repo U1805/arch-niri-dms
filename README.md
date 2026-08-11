@@ -2,50 +2,6 @@
 
 ---
 
-# shorin-dms-niri
-
-基于Niri+DMS的桌面预设，开箱即用。
-
-
-##  Usage 使用方法
-
-- install安装
-
-    ```
-    yay -S shorin-dms-niri-git
-    ```
-
-    ```
-    shorindms init 
-    ```
-
-    启动niri：
-    
-    ```
-    niri-session
-    ```
-
-    如果你使用显示管理器的话在登录界面切换为niri
-
-- update更新
-
-    ```
-    shorindms update
-    ```
-    以防万一，你的配置文件会被备份到`.cache`。
-
-- uninstall卸载
-
-    ```
-    shorindms remove 
-    ```
-
-    ```
-    yay -Rns shorin-dms-niri-git
-    ```
-
----
-
 ## 0. 从启动盘开始
 
 下载 Arch Linux 的 ISO，放进 Ventoy。
@@ -57,6 +13,8 @@ boot in normal mode
 ```
 
 进入 archlive 环境。
+
+> `ls /sys/firmware/efi/efivars` 确认 UEFI Firmware。
 
 ------
 
@@ -139,11 +97,11 @@ archinstall
 - Bootloader: Grub, removable
 - Kernel: linux-lts, linux-zen
 - Authentication: 添加用户
-- Application: Bluetooth, audio pipewire, no print, power-profiles-daemon
 - Network: Use Network Manager default backend
 - Timezone: Asia/Shanghai
 
-记得在 /boot/grub 创建链接
+选择 `chroot into installation`, 
+在 /boot/grub 创建链接
 ```
 ln -s /efi/grub /boot/grub
 ```

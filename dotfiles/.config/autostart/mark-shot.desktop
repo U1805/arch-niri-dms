@@ -1,0 +1,8 @@
+[Desktop Entry]
+Hidden=true
+Type=Application
+Name=Mark Shot
+Comment=Start Mark Shot in the system tray
+Exec="/usr/bin/mark-shot" --tray
+Terminal=false
+X-GNOME-Autostart-enabled=true

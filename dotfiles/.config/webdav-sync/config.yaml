@@ -1,0 +1,54 @@
+- name: keepassxc
+  webdav:
+    remote_dir: keepass
+    local_dir: ~/.local/share/keepassxc
+  watchexec:
+    exts: [kdbx]
+    fs_events: [create, modify, remove, rename]
+    debounce: 800ms
+  sync:
+    initial: pull
+    pull_interval: 10m
+    pull_max_failures: 6
+    keep_backups: 3
+    push_on_delete: true
+    pull_on_delete: false
+    conflict: newer_wins
+    conflict_tolerance: 3s
+- name: zed
+  webdav:
+    profile_name: keepassxc
+    remote_dir: Zed
+    local_dir: ~/.config/zed
+  watchexec:
+    filter: [settings.json, keymap.json]
+    fs_events: [create, modify, remove, rename]
+    debounce: 800ms
+  sync:
+    initial: pull
+    pull_interval: 10m
+    pull_max_failures: 6
+    keep_backups: 3
+    push_on_delete: true
+    pull_on_delete: false
+    conflict: newer_wins
+    conflict_tolerance: 3s
+- name: plan
+  webdav:
+    profile_name: keepassxc
+    remote_dir: dotfiles
+    local_dir: ~/Downloads
+  watchexec:
+    filter: [.plan]
+    exts: [plan]
+    fs_events: [create, modify, remove, rename]
+    debounce: 800ms
+  sync:
+    initial: pull
+    pull_interval: 10m
+    pull_max_failures: 6
+    keep_backups: 3
+    push_on_delete: true
+    pull_on_delete: false
+    conflict: newer_wins
+    conflict_tolerance: 3s

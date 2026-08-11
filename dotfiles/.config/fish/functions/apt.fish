@@ -1,10 +1,10 @@
 # ==============================================================================
 # Function: apt (Smart Arch Package Manager Wrapper for Fish)
-# Description: Maps common Debian 'apt' commands to an intelligent Arch backend.
+# Description: Maps common Debian 'apt' commands to Arch package operations.
 # Features:
-#   - Fallback routing: paru > yay > pacman.
-#   - Automatic Sudo Handling: Prevents AUR helpers from running as root.
-#   - Anti-Partial-Upgrade: Merges update/upgrade into a safe -Syu operation.
+#   - Source-aware routing: official packages use pacman; AUR packages use paru.
+#   - Safe privilege handling: pacman uses sudo; paru always runs as the user.
+#   - Anti-partial-upgrade: update/upgrade begins with a complete pacman -Syu.
 #   - Deep Clean Default: Merges remove/purge into -Rns for a pristine system.
 #   - UI Integration: Progressive enhancement with 'shorin' for interactive modes.
 #   - Safe orphan detection and i18n support.
@@ -12,7 +12,7 @@
 # Usage: apt {update|upgrade|install [ui]|remove [ui]|search|show|autoremove|clean|help|-h} [pkg...]
 # ==============================================================================
 
-function apt -d "Smart wrapper routing apt commands to paru/yay/pacman"
+function apt -d "Arch package wrapper routing official packages to pacman and AUR packages to paru"
     # 1. 极简的 Locale 探测
     set -l is_zh 0
     if string match -q -r "^zh_" "$LC_ALL" "$LC_MESSAGES" "$LANG"
@@ -43,7 +43,7 @@ function apt -d "Smart wrapper routing apt commands to paru/yay/pacman"
             set -l c_rst (set_color normal)
 
             if test $is_zh -eq 1
-                echo "Arch 包管理器包装器 (优先级: "$c_hl"paru > yay > pacman"$c_rst")"
+                echo "Arch 包管理器包装器 ("$c_hl"官方仓库: pacman；AUR: paru"$c_rst")"
                 echo "用法: "$c_hl"apt"$c_rst" <命令> [软件包...]"
                 echo ""
                 echo "命令:"
@@ -62,7 +62,7 @@ function apt -d "Smart wrapper routing apt commands to paru/yay/pacman"
                 echo "  "$c_cmd"clean          "$c_rst"  清理下载缓存 (-Sc)"
                 echo "  "$c_cmd"help, -h       "$c_rst"  显示此帮助信息"
             else
-                echo "Smart Arch Package Wrapper (Routing: "$c_hl"paru > yay > pacman"$c_rst")"
+                echo "Smart Arch Package Wrapper ("$c_hl"official: pacman; AUR: paru"$c_rst")"
                 echo "Usage: "$c_hl"apt"$c_rst" <command> [package...]"
                 echo ""
                 echo "Commands:"
@@ -84,27 +84,7 @@ function apt -d "Smart wrapper routing apt commands to paru/yay/pacman"
             return $exit_code
     end
 
-    # 4. 核心路由与提权逻辑
-    set -l pkg_mgr
-    set -l needs_sudo "no"
-
-    if command -q paru
-        set pkg_mgr "paru"
-    else if command -q yay
-        set pkg_mgr "yay"
-    else
-        set pkg_mgr "pacman"
-        set needs_sudo "yes"
-    end
-
-    set -l cmd
-    if test "$needs_sudo" = "yes"
-        set cmd sudo $pkg_mgr
-    else
-        set cmd $pkg_mgr
-    end
-
-    # 5. 预定义基础错误信息 (本地化)
+    # 4. 预定义基础错误信息 (本地化)
     set -l msg_err_pkg "Error: Specify packages."
     set -l msg_err_search "Error: Specify search term."
     set -l msg_err_show "Error: Specify package to show."
@@ -114,10 +94,13 @@ function apt -d "Smart wrapper routing apt commands to paru/yay/pacman"
         set msg_err_show "错误：请指定要查看的软件包。"
     end
 
-    # 6. 动作映射 (Action Mapping)
+    # 5. 动作映射 (Action Mapping)
     switch $action
         case update upgrade
-            $cmd -Syu
+            sudo pacman -Syu; or return $status
+            if command -q paru
+                paru -Sua
+            end
         case install
             if test (count $argv) -eq 0; echo $msg_err_pkg; return 1; end
             # 拦截 'install ui'，条件：且只输入了 ui 一个参数，且系统存在 shorin
@@ -125,7 +108,27 @@ function apt -d "Smart wrapper routing apt commands to paru/yay/pacman"
                 shorin pac
                 return 0
             end
-            $cmd -S $argv
+
+            set -l official_packages
+            set -l aur_packages
+            for package in $argv
+                if pacman -Si -- "$package" >/dev/null 2>&1
+                    set -a official_packages "$package"
+                else
+                    set -a aur_packages "$package"
+                end
+            end
+
+            if test (count $official_packages) -gt 0
+                sudo pacman -S --needed -- $official_packages; or return $status
+            end
+            if test (count $aur_packages) -gt 0
+                if not command -q paru
+                    echo "Error: paru is required for non-repository packages: $aur_packages" >&2
+                    return 127
+                end
+                paru -S --needed -- $aur_packages
+            end
         case remove
             if test (count $argv) -eq 0; echo $msg_err_pkg; return 1; end
             # 拦截 'remove ui'
@@ -133,22 +136,24 @@ function apt -d "Smart wrapper routing apt commands to paru/yay/pacman"
                 shorin pacr
                 return 0
             end
-            $cmd -Rns $argv
+            sudo pacman -Rns -- $argv
         case search
             if test (count $argv) -eq 0; echo $msg_err_search; return 1; end
-            $pkg_mgr -Ss $argv
+            pacman -Ss $argv
         case show
             if test (count $argv) -eq 0; echo $msg_err_show; return 1; end
-            $pkg_mgr -Si $argv
+            if not pacman -Si -- $argv
+                command -q paru; and paru -Si -- $argv
+            end
         case autoremove
             set -l orphans (pacman -Qtdq)
             if test (count $orphans) -gt 0
                 if test $is_zh -eq 1
-                    echo "找到 "(count $orphans)" 个孤立的软件包。正在通过 $pkg_mgr 卸载..."
+                    echo "找到 "(count $orphans)" 个孤立的软件包。正在通过 pacman 卸载..."
                 else
-                    echo "Found "(count $orphans)" orphaned package(s). Removing via $pkg_mgr..."
+                    echo "Found "(count $orphans)" orphaned package(s). Removing via pacman..."
                 end
-                $cmd -Rns $orphans
+                sudo pacman -Rns -- $orphans
             else
                 if test $is_zh -eq 1
                     echo "系统很干净，没有需要清理的孤立软件包。"
@@ -157,7 +162,7 @@ function apt -d "Smart wrapper routing apt commands to paru/yay/pacman"
                 end
             end
         case clean
-            $cmd -Sc
+            sudo pacman -Sc
         case '*'
             if test $is_zh -eq 1
                 echo "错误：不支持的 apt 命令映射: $action"

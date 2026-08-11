@@ -93,7 +93,6 @@ spawn-sh-at-startup "systemctl --user set-environment XDG_SESSION_CLASS=user"
 // 输入法（-d 防止 D-Bus 自动激活提前拉起破坏 rime 状态）
 spawn-at-startup "fcitx5" "-d"
 // 截图音效的守护进程
-spawn-at-startup "~/.config/niri/scripts/screenshot-sound.sh"
 // 允许root通过用户的xwayland打开窗口
 spawn-at-startup "xhost" "+si:localuser:root"
 // dms 搜索
@@ -165,3 +164,4 @@ include "dms/colors.kdl"
 // 取消下面这行的注释启动shorin预先准备好的blur配置
 //include "blur.kdl"
 
+include "dms/layout.kdl"

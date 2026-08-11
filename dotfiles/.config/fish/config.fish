@@ -1,48 +1,53 @@
-if status is-interactive
-    # Commands to run in interactive sessions can go here
-end
 set fish_greeting ""
-set -p PATH ~/.local/bin
-starship init fish | source
-zoxide init fish --cmd cd | source
-# 111
-function y
-	set tmp (mktemp -t "yazi-cwd.XXXXXX")
-	yazi $argv --cwd-file="$tmp"
-	if read -z cwd < "$tmp"; and [ -n "$cwd" ]; and [ "$cwd" != "$PWD" ]
-		builtin cd -- "$cwd"
-	end
-	rm -f -- "$tmp"
+if not contains -- "$HOME/.local/bin" $PATH
+    set -gx PATH "$HOME/.local/bin" $PATH
 end
 
-function cat 
-	command bat $argv
+if status is-interactive
+    command -q starship; and starship init fish | source
+    command -q zoxide; and zoxide init fish --cmd cd | source
+
+    abbr grub 'LANGUAGE=en_US.UTF-8 LANG=en_US.UTF-8 sudo grub-mkconfig -o /boot/grub/grub.cfg'
+    abbr fa fastfetch
+    abbr reboot 'systemctl reboot'
 end
+
+function y
+    if not command -q yazi
+        echo "yazi is not installed." >&2
+        return 127
+    end
+
+    set tmp (mktemp -t "yazi-cwd.XXXXXX")
+    yazi $argv --cwd-file="$tmp"
+    if read -z cwd <"$tmp"; and [ -n "$cwd" ]; and [ "$cwd" != "$PWD" ]
+        builtin cd -- "$cwd"
+    end
+    rm -f -- "$tmp"
+end
+
+function cat
+    if command -q bat
+        command bat $argv
+    else
+        command cat $argv
+    end
+end
+
 function ls
-	command eza --icons $argv
+    if command -q eza
+        command eza --icons $argv
+    else
+        command ls $argv
+    end
 end
 
 function lt
-	command eza --icons --tree $argv
+    if command -q eza
+        command eza --icons --tree $argv
+    else
+        set -l target .
+        test (count $argv) -gt 0; and set target $argv[1]
+        command find "$target" -maxdepth 2 -print
+    end
 end
-# grub
-abbr grub 'LANGUAGE=en_US.UTF-8 LANG=en_US.UTF-8 sudo grub-mkconfig -o /boot/grub/grub.cfg'
-# fa运行fastfetch
-abbr fa fastfetch
-abbr reboot 'systemctl reboot'
-function sl 
-	command sl | lolcat	
-end
-function 滚
-	sysup 
-end
-
-function 安装
-	command yay -S $argv
-end
-
-function 卸载
-	command yay -Rns $argv
-end 
-
-

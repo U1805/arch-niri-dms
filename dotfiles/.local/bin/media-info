@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Localized media metadata display for terminal/Thunar use.
+
+usage() { printf 'Usage: media-info [-f] FILE\n'; }
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || {
+    printf 'media-info: missing dependency: %s\nInstall it with:\n  sudo pacman -S --needed %s\n' "$1" "$2" >&2
+    exit 127
+  }
+}
+[[ "${1:-}" != -h && "${1:-}" != --help ]] || { usage; exit 0; }
+[[ "${1:-}" != -f ]] || shift
+[[ $# -eq 1 ]] || { usage >&2; exit 2; }
+file=$1
+[[ -f $file ]] || { printf 'media-info: not a file: %s\n' "$file" >&2; exit 1; }
+require_command ffprobe ffmpeg
+require_command jq jq
+
+if [[ ${LC_ALL:-${LC_MESSAGES:-${LANG:-}}} == *zh* ]]; then
+  label_file='文件名'; label_path='路　径'; label_size='大　小'; label_time='时　长'
+  label_rate='比特率'; label_video='视频流'; label_audio='音频流'; label_subtitle='字幕流'
+  press_key='按任意键关闭窗口...'
+else
+  label_file='File'; label_path='Path'; label_size='Size'; label_time='Duration'
+  label_rate='Bitrate'; label_video='Video'; label_audio='Audio'; label_subtitle='Subtitle'
+  press_key='Press any key to close...'
+fi
+json=$(ffprobe -v error -show_format -show_streams -of json -- "$file") || {
+  printf 'media-info: ffprobe could not parse: %s\n' "$file" >&2
+  exit 1
+}
+duration=$(jq -r '.format.duration // empty' <<<"$json")
+bitrate=$(jq -r '.format.bit_rate // empty' <<<"$json")
+if [[ $duration =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+  duration_fmt=$(awk -v value="$duration" 'BEGIN {s=int(value+0.5); printf "%02d:%02d:%02d", int(s/3600), int((s%3600)/60), s%60}')
+else duration_fmt='Unknown'; fi
+if [[ $bitrate =~ ^[0-9]+$ ]]; then bitrate_fmt=$(awk -v value="$bitrate" 'BEGIN {printf "%.0f kb/s", value/1000}')
+else bitrate_fmt='Unknown'; fi
+
+printf '\n\033[36m%-10s\033[0m: \033[1m%s\033[0m\n' "$label_file" "$(basename -- "$file")"
+printf '\033[36m%-10s\033[0m: %s\n' "$label_path" "$(realpath -- "$file")"
+printf '\033[36m%-10s\033[0m: %s\n' "$label_size" "$(du -h -- "$file" | cut -f1)"
+printf '\033[90m----------------------------------------\033[0m\n'
+[[ $duration_fmt == Unknown ]] || printf '\033[33m%-10s\033[0m: \033[1m%s\033[0m\n' "$label_time" "$duration_fmt"
+[[ $bitrate_fmt == Unknown ]] || printf '\033[33m%-10s\033[0m: %s\n' "$label_rate" "$bitrate_fmt"
+
+image_hint=false
+[[ -z $duration ]] && image_hint=true
+while IFS=$'\t' read -r type codec detail; do
+  case $type in
+    video) printf '\033[34m%-10s\033[0m: %s | %s\n' "$label_video" "$codec" "$detail";;
+    audio) printf '\033[32m%-10s\033[0m: %s | %s\n' "$label_audio" "$codec" "$detail";;
+    subtitle) printf '\033[35m%-10s\033[0m: %s | %s\n' "$label_subtitle" "$codec" "$detail";;
+  esac
+done < <(jq -r --arg image "$image_hint" '.streams[] |
+  if .codec_type == "video" then
+    (if $image == "true" then "image" else ((.avg_frame_rate // "0/0") | split("/") | if (.[1]|tonumber? // 0) != 0 then
+      (((.[0]|tonumber) / (.[1]|tonumber)) * 100 | round / 100 | tostring) + " fps" else "image" end) as $fps |
+    $fps end) as $fps |
+    ["video", (.codec_name // "unknown"), "\(.width // 0)x\(.height // 0) | \($fps)"]
+  elif .codec_type == "audio" then
+    ["audio", (.codec_name // "unknown"), "\(.sample_rate // "unknown") Hz | \(.channel_layout // ((.channels // 0 | tostring) + " channels"))"]
+  elif .codec_type == "subtitle" then
+    ["subtitle", (.codec_name // "unknown"), (.tags.language // "unknown")]
+  else empty end | @tsv' <<<"$json")
+
+if [[ -t 0 ]]; then
+  printf '\n\033[90m----------------------------------------\033[0m\n\033[1m%s\033[0m' "$press_key"
+  IFS= read -r -n 1 _ || true
+  printf '\n'
+fi

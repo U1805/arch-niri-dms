@@ -1,0 +1,90 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run `zed: open default settings` from the
+// command palette (cmd-shift-p / ctrl-shift-p)
+{
+  // edit
+  "use_system_path_prompts": false,
+  "autosave": {
+    "after_delay": {
+      "milliseconds": 1000
+    }
+  },
+  "cli_default_open_behavior": "new_window",
+  
+  // vim mode
+  "vim_mode": true,
+  "vim": {
+    "toggle_relative_line_numbers": true
+  },
+  "relative_line_numbers": "wrapped",
+  
+  // view
+  "git_panel": {
+    "dock": "left"
+  },
+  "project_panel": {
+    "dock": "left"
+  },
+  "icon_theme": {
+    "mode": "light",
+    "light": "Colored Zed Icons Theme Dark",
+    "dark": "Colored Zed Icons Theme Dark"
+  },
+  "theme": {
+    "mode": "light",
+    "light": "Ayu Mirage",
+    "dark": "Ayu Mirage",
+  },
+
+  
+  "lsp": {
+    "basedpyright": {
+      "settings": {
+        "basedpyright.analysis": {
+          "diagnosticSeverityOverrides": {
+            "reportArgumentType": "none",
+            "reportAttributeAccessIssue": "none",
+            "reportAssignmentType": "none",
+          }
+        }
+      }
+    }
+  },
+
+  // ai and data sending
+  "disable_ai": true,
+  "language_models": {
+    "opencode": {
+      "show_free_models": false,
+      "show_zen_models": false
+    }
+  },
+  "edit_predictions": {
+    "allow_data_collection": "no"
+  },
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false,
+    "anthropic_retention": false
+  },
+
+  // workspace
+  "wsl_connections": [
+    {
+      "distro_name": "Ubuntu",
+      "user": null,
+      "projects": [
+        {
+          "paths": [
+            "/home/dai0v0"
+          ]
+        }
+      ]
+    }
+  ],
+}

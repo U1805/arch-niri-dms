@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Terminal alarm and countdown timer.
+
+if [[ ${LC_MESSAGES:-${LANG:-}} == *zh_CN* ]]; then
+  usage_text=$'用法：timer <时间>\n  timer 10m       10 分钟后响铃\n  timer 14:30     在 14:30 响铃\n  timer 1h 30m    组合时长'
+  alarm_set='⏰ 闹钟已设定'
+  remaining_label='⏳ 剩余'
+  ringing='🔔 时间到！按回车停止闹钟...'
+  stopped='✅ 闹钟已关闭。'
+else
+  usage_text=$'Usage: timer <time>\n  timer 10m       ring in 10 minutes\n  timer 14:30     ring at 14:30\n  timer 1h 30m    combined duration'
+  alarm_set='⏰ Alarm set'
+  remaining_label='⏳ Remaining'
+  ringing="🔔 Time's up! Press Enter to stop the alarm..."
+  stopped='✅ Alarm stopped.'
+fi
+
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || {
+    printf 'timer: missing dependency: %s\nInstall it with:\n  sudo pacman -S --needed %s\n' "$1" "$2" >&2
+    exit 127
+  }
+}
+[[ "${1:-}" != -h && "${1:-}" != --help ]] || { printf '%s\n' "$usage_text"; exit 0; }
+(($#)) || { printf '%s\n' "$usage_text" >&2; exit 2; }
+require_command date coreutils
+require_command sleep coreutils
+require_command notify-send libnotify
+require_command pw-play pipewire-audio
+sound=/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga
+[[ -f $sound ]] || sound=/usr/share/sounds/freedesktop/stereo/complete.oga
+[[ -f $sound ]] || {
+  printf 'timer: missing dependency: freedesktop notification sound\nInstall it with:\n  sudo pacman -S --needed sound-theme-freedesktop\n' >&2
+  exit 127
+}
+
+if (($# == 1)) && [[ $1 =~ ^([0-9]{1,2}):([0-9]{1,2})$ ]]; then
+  hour=${BASH_REMATCH[1]}; minute=${BASH_REMATCH[2]}
+  ((hour < 24 && minute < 60)) || { printf 'timer: invalid time: %s\n' "$1" >&2; exit 2; }
+  now=$(date +%s)
+  target=$(date -d "today $hour:$minute" +%s)
+  ((target > now)) || target=$(date -d "tomorrow $hour:$minute" +%s)
+  seconds=$((target - now))
+else
+  seconds=0
+  for value in "$@"; do
+    rest=$value
+    matched=false
+    while [[ $rest =~ ^([0-9]+)([hmsHMS])(.*)$ ]]; do
+      number=${BASH_REMATCH[1]}; unit=${BASH_REMATCH[2],,}; rest=${BASH_REMATCH[3]}; matched=true
+      case $unit in h) ((seconds += number * 3600));; m) ((seconds += number * 60));; s) ((seconds += number));; esac
+    done
+    $matched && [[ -z $rest ]] || { printf 'timer: invalid duration: %s\n' "$value" >&2; exit 2; }
+  done
+  ((seconds > 0)) || { printf 'timer: duration must be greater than zero\n' >&2; exit 2; }
+  target=$(($(date +%s) + seconds))
+fi
+
+printf '\033[1;32m%s: %02d:%02d:%02d (%s)\033[0m\n' "$alarm_set" \
+  $((seconds / 3600)) $(((seconds % 3600) / 60)) $((seconds % 60)) "$(date -d "@$target" +%H:%M)"
+while ((seconds > 0)); do
+  printf '\r\033[1;36m%s %02d:%02d:%02d\033[0m   ' "$remaining_label" \
+    $((seconds / 3600)) $(((seconds % 3600) / 60)) $((seconds % 60))
+  sleep 1
+  seconds=$((target - $(date +%s)))
+done
+printf '\r\033[K'
+notify-send -u critical 'Timer' "$ringing" >/dev/null 2>&1 || true
+printf '\033[1;33m%s\033[0m\n' "$ringing"
+(
+  while true; do
+    pw-play "$sound" >/dev/null 2>&1 || true
+    sleep 0.3
+  done
+) &
+alarm_pid=$!
+cleanup_alarm() {
+  kill "$alarm_pid" 2>/dev/null || true
+  pkill -TERM -P "$alarm_pid" 2>/dev/null || true
+  wait "$alarm_pid" 2>/dev/null || true
+}
+trap cleanup_alarm EXIT INT TERM
+IFS= read -r _ || true
+cleanup_alarm
+trap - EXIT INT TERM
+printf '\033[1;32m%s\033[0m\n' "$stopped"

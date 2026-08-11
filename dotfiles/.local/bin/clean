@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Auditable Arch cleanup assistant. Destructive work requires --apply.
+
+apply=false
+assume_yes=false
+clean_all=false
+usage() {
+  printf 'Usage: clean [--apply] [--all] [--yes]\n'
+  printf 'Default mode reports candidates. --all also clears complete package/AUR caches and media folders.\n'
+}
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || {
+    printf 'clean: missing dependency: %s\nInstall it with:\n  sudo pacman -S --needed %s\n' "$1" "$2" >&2
+    exit 127
+  }
+}
+while (($#)); do
+  case $1 in
+    --apply) apply=true;;
+    --all|all) clean_all=true;;
+    --yes|-y) assume_yes=true;;
+    -h|--help) usage; exit 0;;
+    *) usage >&2; exit 2;;
+  esac
+  shift
+done
+require_command pacman pacman
+require_command find findutils
+
+mapfile -t orphans < <(pacman -Qtdq 2>/dev/null || true)
+debug_orphans=()
+while IFS= read -r package; do
+  base=${package%-debug}
+  pacman -Qq "$base" >/dev/null 2>&1 || debug_orphans+=("$package")
+done < <(pacman -Qq | grep -- '-debug$' || true)
+declare -A seen=()
+remove_packages=()
+for package in "${orphans[@]}" "${debug_orphans[@]}"; do
+  [[ -n $package && -z ${seen[$package]:-} ]] || continue
+  seen[$package]=1
+  remove_packages+=("$package")
+done
+
+count_entries() {
+  local path=$1
+  shift
+  [[ -d $path ]] && find "$path" -mindepth 1 "$@" | wc -l || printf '0\n'
+}
+trash=$HOME/.local/share/Trash
+thumbnails=$HOME/.cache/thumbnails
+clipboard=$HOME/.cache/shorinclip
+media_dirs=(
+  "$HOME/Pictures/Screenshots"
+  "$HOME/Pictures/mark-shot"
+  "$HOME/Videos/wf-recorder"
+  "$HOME/Videos/shorin-screenrec-menu"
+)
+broken_downloads=$(find /var/cache/pacman/pkg -maxdepth 1 -type d -name 'download-*' 2>/dev/null | wc -l)
+
+printf '\n\033[1;36m=== Arch Linux cleanup report ===\033[0m\n'
+printf 'Orphan/debug packages: %d\n' "${#remove_packages[@]}"
+printf '  %s\n' "${remove_packages[@]:-}"
+printf 'Pacman interrupted download directories: %s\n' "$broken_downloads"
+printf 'Trash entries: %s\n' "$(count_entries "$trash")"
+printf 'Thumbnails unused for 30+ days: %s\n' "$(count_entries "$thumbnails" -type f -atime +30)"
+printf 'Clipboard cache unused for 30+ days: %s\n' "$(count_entries "$clipboard" -type f -atime +30)"
+if command -v flatpak >/dev/null; then
+  printf 'Unused Flatpak runtimes: resolved safely by Flatpak during --apply (no dry-run API available).\n'
+fi
+if $clean_all; then
+  printf '\033[1;31mALL mode additionally clears all Pacman/Paru caches and these media folders:\033[0m\n'
+  for path in "${media_dirs[@]}"; do printf '  %s (%s entries)\n' "$path" "$(count_entries "$path")"; done
+  printf 'Snapper snapshots are NOT mass-deleted; configured number/timeline policies still apply.\n'
+fi
+
+$apply || { printf '\nPreview only. Re-run with --apply to clean.\n'; exit 0; }
+require_command sudo sudo
+require_command journalctl systemd
+if ! $assume_yes; then
+  if $clean_all; then prompt='Type PURGE to apply ALL cleanup: '; expected=PURGE
+  else prompt='Type CLEAN to apply this cleanup: '; expected=CLEAN
+  fi
+  read -r -p "$prompt" answer
+  [[ $answer == "$expected" ]] || exit 0
+fi
+sudo -v
+((${#remove_packages[@]} == 0)) || sudo pacman -Rns -- "${remove_packages[@]}"
+if $clean_all; then
+  sudo pacman -Scc --noconfirm
+  command -v paru >/dev/null 2>&1 && paru -Scc --aur --noconfirm || true
+else
+  sudo pacman -Sc --noconfirm
+  command -v paru >/dev/null 2>&1 && paru -Sc --aur --noconfirm || true
+fi
+((broken_downloads == 0)) || sudo find /var/cache/pacman/pkg -maxdepth 1 -type d \
+  -name 'download-*' -exec rm -rf -- {} +
+sudo journalctl --vacuum-time=2weeks
+[[ -d $trash ]] && find "$trash" -mindepth 1 -delete
+[[ -d $thumbnails ]] && find "$thumbnails" -type f -atime +30 -delete
+[[ -d $clipboard ]] && find "$clipboard" -type f -atime +30 -delete
+command -v flatpak >/dev/null && flatpak uninstall --unused -y || true
+if $clean_all; then
+  for path in "${media_dirs[@]}"; do
+    [[ -d $path && $path == "$HOME"/* ]] && find "$path" -mindepth 1 -delete
+  done
+fi
+if command -v snapper >/dev/null; then
+  while read -r config; do
+    [[ -n $config ]] || continue
+    sudo snapper -c "$config" cleanup number || true
+    sudo snapper -c "$config" cleanup timeline || true
+  done < <(LC_ALL=C snapper list-configs | awk -F'|' 'NR>2 {gsub(/^[ \t]+|[ \t]+$/, "", $1); if ($1!="") print $1}')
+fi
+printf '\033[1;32mCleanup completed.\033[0m\n'

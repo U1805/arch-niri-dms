@@ -1,0 +1,30 @@
+#!/bin/sh
+set -eu
+
+# Keep the package-owned 10_linux unchanged. Only expose its Advanced submenu,
+# and only when every emitted kernel entry has a complete initramfs.
+for kernel in /boot/vmlinuz-*; do
+    [ -f "$kernel" ] || exit 0
+    version=${kernel#/boot/vmlinuz-}
+    [ -s "/boot/initramfs-$version.img" ] || {
+        echo "31_arch_advanced: skipping unsafe $version entry without a complete initramfs" >&2
+        exit 0
+    }
+done
+
+fragment=$(mktemp)
+trap 'rm -f "$fragment"' EXIT HUP INT TERM
+/bin/sh /etc/grub.d/10_linux >"$fragment"
+
+grep -q '^submenu ' "$fragment" || exit 0
+
+awk '
+    /^menuentry / { skipping = 1 }
+    skipping && /^submenu / { skipping = 0 }
+    !skipping {
+        if ($0 ~ /^submenu /) {
+            sub(/ \$menuentry_id_option/, " --class arch $menuentry_id_option")
+        }
+        print
+    }
+' "$fragment"

@@ -1,117 +1,101 @@
 #!/usr/bin/env bash
 
 # ==============================================================================
-# 脚本功能说明 (Bootstrap Script for Shorin Arch Setup)
-# 1. 环境防御：严格检测操作系统(仅限Linux)与系统架构(仅限x86_64)。
-# 2. 权限自适应：智能识别 root/普通用户，防止 Live CD 环境下缺少 sudo 导致崩溃。
-# 3. 依赖隐身：静默准备 curl/tar/git/pv。其中 pv 仅作临时数据流监控。
-# 4. 流式处理：通过 curl 从 GitHub archive 拉取源码，pv 提供进度条与网速监控。
-# 5. 用完即焚：解压完成后，静默卸载临时依赖 pv (若它是被本脚本安装的)，保持系统洁净。
-# 6. 一键引导：无缝切换目录并接管标准输入，提权执行核心安装脚本。
+# Shorin Arch 安装入口
+# 1. 检查操作系统和处理器架构。
+# 2. 使用 root 或 sudo 执行特权命令。
+# 3. 检查下载命令，并通过 GitHub 代理下载仓库。
+# 4. 启动 install.sh。
 # ==============================================================================
 
-# 启用严格模式：遇到错误、未定义变量或管道错误时立即退出
+# 如果命令、变量或管道出错，立即退出。
 set -euo pipefail
 
-# --- [颜色配置] ---
+# 终端颜色
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m' # 重置颜色
 
-# --- [环境检测与准备] ---
+# 检查运行环境
 
-# 1. 检查是否为 Linux 内核
+# 检查 Linux 内核。
 if [ "$(uname -s)" != "Linux" ]; then
-    printf "%bError: This installer only supports Linux systems.%b\n" "$RED" "$NC"
+    printf "%bError: This installer supports Linux only.%b\n" "$RED" "$NC"
     exit 1
 fi
 
-# 2. 检查架构是否匹配 (仅允许 x86_64)
+# 检查处理器架构。
 ARCH=$(uname -m)
 if [ "$ARCH" != "x86_64" ]; then
-    printf "%bError: Unsupported architecture: %s%b\n" "$RED" "$ARCH" "$NC"
-    printf "This installer is strictly designed for x86_64 (amd64) systems only.\n"
+    printf "%bError: The %s architecture is not supported.%b\n" "$RED" "$ARCH" "$NC"
+    printf "This installer supports x86_64 only.\n"
     exit 1
 fi
 ARCH_NAME="amd64"
 
-# 3. 极简提权封装 (KISS 原则：是 root 直接跑，不是 root 才加 sudo)
+# 如果当前用户不是 root，则使用 sudo。
 run_as_root() {
     if [ "$(id -u)" -eq 0 ]; then
         "$@"
     else
         if ! command -v sudo >/dev/null 2>&1; then
-            printf "%bError: 'sudo' command not found. Please run this script as root.%b\n" "$RED" "$NC"
+            printf "%bError: sudo is not available. Run this script as root.%b\n" "$RED" "$NC"
             exit 1
         fi
         sudo "$@"
     fi
 }
 
-# --- [配置区域] ---
+# 下载配置
 TARGET_BRANCH="${BRANCH:-main}"
 TARBALL_URL="https://gh-proxy.org/https://github.com/U1805/arch-niri-dms/archive/refs/heads/${TARGET_BRANCH}.tar.gz"
 TARGET_DIR="/tmp/arch-niri-dms"
 
-# 预估源码压缩包体积。实际测得约为 60MB，预留余量 100M，确保进度条平滑。
-EXPECTED_SIZE="100M"
+printf "%bInstall branch: %s. Architecture: %s.%b\n" "$BLUE" "$TARGET_BRANCH" "$ARCH_NAME" "$NC"
 
-printf "%b>>> Preparing to install from branch: %s on %s%b\n" "$BLUE" "$TARGET_BRANCH" "$ARCH_NAME" "$NC"
-
-# --- [执行流程] ---
-
-# 1. 依赖检查与静默安装
-MISSING_PKGS=()
-INSTALLED_PV_FLAG=0
-
-for cmd in curl tar git pv; do
+# 下载仓库前，仅检查入口脚本所需的命令。install.sh 负责所有软件包操作。
+MISSING_BOOTSTRAP_CMDS=()
+for cmd in curl tar; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
-        MISSING_PKGS+=("$cmd")
-        if [ "$cmd" = "pv" ]; then
-            INSTALLED_PV_FLAG=1
-        fi
+        MISSING_BOOTSTRAP_CMDS+=("$cmd")
     fi
 done
 
-if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
-    run_as_root pacman -Sy --noconfirm --needed "${MISSING_PKGS[@]}" >/dev/null 2>&1
+if [ ${#MISSING_BOOTSTRAP_CMDS[@]} -gt 0 ]; then
+    printf "%bError: Required commands are not available: %s.%b\n" "$RED" "${MISSING_BOOTSTRAP_CMDS[*]}" "$NC"
+    printf "Install them first: sudo pacman -S --needed %s\n" "${MISSING_BOOTSTRAP_CMDS[*]}"
+    exit 1
 fi
 
-# 2. 清理旧目录并重新创建
+# 重新创建下载目录。
 if [ -d "$TARGET_DIR" ]; then
     run_as_root rm -rf "$TARGET_DIR"
 fi
 mkdir -p "$TARGET_DIR"
 
-# 3. 流式下载与解压 (引入基于预估体积的真实进度条)
-printf "Downloading and extracting repository to %s...\n" "$TARGET_DIR"
+# 下载并解压仓库。curl 显示传输进度。
+printf "Download and extract the repository to %s.\n" "$TARGET_DIR"
 
 for attempt in 1 2 3; do
-    # -s "$EXPECTED_SIZE" 让 pv 知道终点，-ptrb: p=进度条, t=时间, r=网速, b=字节
-    if curl -sSLf "$TARBALL_URL" | pv -ptrb -s "$EXPECTED_SIZE" | tar -xz -C "$TARGET_DIR" --strip-components=1; then
+    if curl --fail --location "$TARBALL_URL" | tar -xz -C "$TARGET_DIR" --strip-components=1; then
         run_as_root chmod 755 "$TARGET_DIR"
-        printf "%b\nDownload and extraction successful.%b\n" "$GREEN" "$NC"
+        printf "%b\nThe repository download is complete.%b\n" "$GREEN" "$NC"
         break
     fi
     
     if [ "$attempt" -eq 3 ]; then
-        printf "%bError: Failed to download branch '%s' after 3 attempts. Network issue suspected.%b\n" "$RED" "$TARGET_BRANCH" "$NC"
+        printf "%bError: The %s branch download failed after three attempts. Check the network connection.%b\n" "$RED" "$TARGET_BRANCH" "$NC"
         exit 1
     fi
     
-    printf "%bWarning: Download failed (attempt %d/3). Retrying in 3 seconds...%b\n" "$RED" "$attempt" "$NC"
+    printf "%bWarning: Download attempt %d of 3 failed. Retry in three seconds.%b\n" "$RED" "$attempt" "$NC"
     sleep 3
     run_as_root rm -rf "$TARGET_DIR"
     mkdir -p "$TARGET_DIR"
 done
 
-# 4. 毁尸灭迹：如果 pv 是我们刚装的，悄悄卸载掉
-if [ "$INSTALLED_PV_FLAG" -eq 1 ]; then
-    run_as_root pacman -Rns --noconfirm pv >/dev/null 2>&1
-fi
-
-# 5. 运行安装
+# 启动安装程序。
 cd "$TARGET_DIR"
-printf "Starting installer...\n"
+printf "Start the installer.\n"
 run_as_root bash install.sh < /dev/tty

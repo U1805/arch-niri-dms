@@ -31,7 +31,6 @@ window-rule {
 }
 // 以浮动模式打开的软件
 window-rule {
-    match app-id="com.gabm.satty"
     match app-id="media_info"
     match app-id="video2gif"
     match app-id="floating-term"

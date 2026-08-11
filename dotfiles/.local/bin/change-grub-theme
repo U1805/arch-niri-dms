@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Installed as a direct user command by the dotfiles deployment stage.
+
+theme_root=/usr/share/grub/themes
+grub_default=/etc/default/grub
+usage() { printf 'Usage: change-grub-theme [--list | --set NAME | --clear]\nWithout arguments, open the theme selection menu.\n'; }
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || {
+    printf 'change-grub-theme: missing dependency: %s\nInstall it with:\n  sudo pacman -S --needed %s\n' "$1" "$2" >&2
+    exit 127
+  }
+}
+cleanup_minegrub() {
+  local changed=false
+  if [[ -e /etc/grub.d/05_twomenus ]]; then
+    sudo rm -f -- /etc/grub.d/05_twomenus
+    changed=true
+  fi
+  if [[ -e /boot/grub/mainmenu.cfg ]]; then
+    sudo rm -f -- /boot/grub/mainmenu.cfg
+    changed=true
+  fi
+  if command -v grub-editenv >/dev/null 2>&1 && sudo grub-editenv - list 2>/dev/null | grep -q '^config_file='; then
+    sudo grub-editenv - unset config_file
+    changed=true
+  fi
+  $changed && printf 'Removed the previous Minegrub double-menu configuration.\n'
+}
+if [[ $# -eq 0 ]]; then
+  require_command find findutils
+  mapfile -t menu_themes < <(
+    while IFS= read -r path; do basename -- "$path"; done \
+      < <(find "$theme_root" -mindepth 2 -maxdepth 2 -type f -name theme.txt -printf '%h\n' 2>/dev/null) | sort
+  )
+  printf '\n\033[1;35m╭─ GRUB Theme Switcher\033[0m\n'
+  for i in "${!menu_themes[@]}"; do
+    printf '\033[1;35m│\033[0m  \033[1;36m[%d]\033[0m %s\n' "$((i + 1))" "${menu_themes[$i]}"
+  done
+  clear_index=$((${#menu_themes[@]} + 1))
+  printf '\033[1;35m│\033[0m  \033[1;36m[%d]\033[0m \033[1;33mNo theme (clear)\033[0m\n' "$clear_index"
+  printf '\033[1;35m╰────────────────────────────────────────\033[0m\n'
+  read -r -p "Select an option [1-$clear_index]: " choice
+  [[ $choice =~ ^[0-9]+$ && $choice -ge 1 && $choice -le $clear_index ]] || {
+    printf 'Invalid selection.\n' >&2
+    exit 2
+  }
+  if ((choice == clear_index)); then set -- --clear
+  else set -- --set "${menu_themes[$((choice - 1))]}"
+  fi
+fi
+case $1 in
+  --list)
+    require_command find findutils
+    while IFS= read -r path; do basename -- "$path"; done < <(find "$theme_root" -mindepth 2 -maxdepth 2 -type f -name theme.txt -printf '%h\n' 2>/dev/null) | sort
+    exit 0;;
+  --set) [[ $# -eq 2 ]] || { usage >&2; exit 2; }; name=$2; theme="$theme_root/$name/theme.txt"; [[ -f $theme ]] || { printf 'Theme not found: %s\n' "$name" >&2; exit 1; };;
+  --clear) [[ $# -eq 1 ]] || { usage >&2; exit 2; }; theme=;;
+  -h|--help) usage; exit 0;;
+  *) usage >&2; exit 2;;
+esac
+[[ -f $grub_default ]] || { printf 'Missing %s\n' "$grub_default" >&2; exit 1; }
+require_command grub-mkconfig grub
+require_command sudo sudo
+printf 'Requested GRUB theme: %s\n' "${theme:-none}"
+read -r -p 'Back up the configuration and apply this change? Type APPLY: ' answer
+[[ $answer == APPLY ]] || exit 0
+sudo -v
+backup="/var/backups/arch-niri-dms/grub-default.$(date +%Y%m%d_%H%M%S)"
+sudo install -Dm600 "$grub_default" "$backup"
+cleanup_minegrub
+if [[ -n $theme ]]; then
+  if grep -qE '^#?GRUB_THEME=' "$grub_default"; then sudo sed -i "s|^#*GRUB_THEME=.*|GRUB_THEME=\"$theme\"|" "$grub_default"
+  else printf 'GRUB_THEME="%s"\n' "$theme" | sudo tee -a "$grub_default" >/dev/null; fi
+  sudo sed -i 's|^GRUB_TERMINAL_OUTPUT="console"|#GRUB_TERMINAL_OUTPUT="console"|' "$grub_default"
+  if ! grep -qE '^GRUB_GFXMODE=' "$grub_default"; then
+    printf '%s\n' 'GRUB_GFXMODE=auto' | sudo tee -a "$grub_default" >/dev/null
+  fi
+else
+  sudo sed -i 's|^GRUB_THEME=|#GRUB_THEME=|' "$grub_default"
+fi
+sudo env LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8 grub-mkconfig -o /boot/grub/grub.cfg
+printf 'Applied. Backup: %s\n' "$backup"

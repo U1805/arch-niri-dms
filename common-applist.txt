@@ -1,13 +1,35 @@
-# --- Standard Packages ---
-baobab                                   # GUI Disk Usage Analyzer
-mission-center                           # System Monitor (Task Manager style)
-gparted                                  # Disk Management Utility (Disks)
-gnome-font-viewer                        # manage fonts easily
-gnome-calendar                           # calendar
-gnome-clocks                             # clocks
-snap-pac
-wine                                     # run windows exe
-virt-manager                             # KVM qemu virtual machine
-mousepad                                 # a minimal notebook or so called "text editor"
-zen-browser-bin                          # Zen Browser (AUR)
-sparkle-bin                              # Sparkle (AUR) 
+# --- Arch 官方仓库软件包（系统）---
+btrfs-assistant                           # Btrfs 子卷与 Snapper 快照图形管理器
+bazaar                                    # 以 Flathub 为重点的 Flatpak 图形应用商店
+wine                                      # Windows 应用兼容层
+virt-manager                              # KVM/QEMU 虚拟机图形管理器
+baobab                                    # GUI 磁盘占用分析
+mission-center                            # GUI 系统资源与进程监控
+gparted                                   # GUI 磁盘分区管理
+gnome-font-viewer                         # 字体查看与安装
+gnome-calendar                            # 日历
+gnome-clocks                              # 时钟、闹钟与计时器
+fastfetch                                 # 终端系统信息摘要
+gdu                                       # 终端磁盘空间分析
+btop                                      # 终端资源与进程监控
+yazi                                      # 终端文件管理器
+zed                                       # 图形代码编辑器
+keyd                                      # 系统级键盘按键重映射
+watchexec                                 # 文件变化监控与命令触发
+
+# --- AUR 软件包 ---
+AUR:mark-shot                             # 截图、标注及 GIF/视频录制
+AUR:sparkle-bin                           # Sparkle Clash 图形客户端
+AUR:zen-browser-bin                       # 基于 Firefox 的 Zen Browser
+
+# --- Flathub 用户应用 ---
+flatpak:com.rustdesk.RustDesk             # 远程桌面
+flatpak:com.google.Chrome                 # Chrome 浏览器
+flatpak:com.spotify.Client                # Spotify 音乐客户端
+flatpak:com.qq.QQ                         # QQ
+flatpak:com.tencent.WeChat                # 微信
+flatpak:com.tencent.wemeet                # 腾讯会议
+flatpak:com.wps.Office                    # WPS Office 办公套件
+flatpak:md.obsidian.Obsidian              # Obsidian 笔记应用
+flatpak:org.telegram.desktop              # Telegram 即时通信客户端
+flatpak:org.keepassxc.KeePassXC           # 密码管理器
