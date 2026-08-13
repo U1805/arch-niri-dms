@@ -19,8 +19,8 @@ watchexec                                 # 文件变化监控与命令触发
 
 # --- AUR 软件包 ---
 AUR:mark-shot                             # 截图、标注及 GIF/视频录制
+AUR:zen-browser                           # 基于 Firefox 的 Zen Browser
 AUR:sparkle-bin                           # Sparkle Clash 图形客户端
-AUR:zen-browser-bin                       # 基于 Firefox 的 Zen Browser
 
 # --- Flathub 用户应用 ---
 flatpak:com.rustdesk.RustDesk             # 远程桌面

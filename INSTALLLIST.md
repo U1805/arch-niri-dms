@@ -86,7 +86,7 @@
 | 3.6 | `usbutils`, `pciutils` | 官方 | USB/PCI 硬件检测 | 固定安装，用于蓝牙探测 |
 | 3.7 | `bluez`, `bluetui` | 官方 | 提供蓝牙协议和终端界面 | 仅当脚本检测到蓝牙时安装。同时启用 `bluetooth` |
 | 3.8 | `power-profiles-daemon` | 官方 | 电源模式管理及 DMS 电源控制后端 | 安装完成后立即启用并启动 |
-| 3.9 | `clang`, `pciutils`, `lua`, `libusb`, chwd | chwd 来自外部仓库，依赖项来自官方 | 构建并临时运行 chwd | 浅克隆并在本机编译。不使用 AUR。运行后删除临时文件 |
+| 3.9 | `clang`, `pciutils`, `lua`, `libusb`, chwd | chwd 来自外部仓库，依赖项来自官方；Rust crates 优先使用 RSProxy | 构建并临时运行 chwd | 浅克隆并在本机编译。不使用 AUR。运行后删除临时文件 |
 | 3.10 | 显卡驱动包 | 由 `chwd -a` 决定 | 提供 Intel、AMD 或 NVIDIA 驱动 | 在 Flatpak 和桌面之前安装。失败时停止安装。pacman 负责后续更新 |
 | 3.11 | `flatpak` | 官方 | 提供 Flatpak 运行环境 | 中国大陆环境使用 SJTU 镜像。其他环境使用 Flathub 官方源 |
 
@@ -183,13 +183,13 @@ pacman 安装这些软件包。
 | 8.12 | `btrfs-assistant` | 官方 `extra` | 以图形界面管理 Btrfs 子卷和 Snapper 快照 | 软件包提供默认配置和 Polkit 策略 |
 | 8.13 | `bazaar` | 官方 `extra` | 以 Flathub 为重点的 Flatpak 图形应用商店 | 固定安装 |
 
-### 5.2 明确标为 AUR 的应用
+### 5.2 通过 Paru 路由的应用
 
 | 顺序 | 包 | 来源 | 作用 |
 |---:|---|---|---|
-| 8.14 | `mark-shot` | AUR | 提供截图、标注、录制和 Niri 窗口识别。官方仓库没有此软件包 |
+| 8.14 | `mark-shot` | archlinuxcn | 提供截图、标注、录制和 Niri 窗口识别。 |
 | 8.15 | `sparkle-bin` | AUR | Sparkle Clash 图形界面 |
-| 8.16 | `zen-browser-bin` | AUR | Zen Browser |
+| 8.16 | `zen-browser` | archlinuxcn | Zen Browser。 |
 
 ### 5.3 Flatpak 应用
 

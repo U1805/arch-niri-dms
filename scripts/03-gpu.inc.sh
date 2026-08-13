@@ -41,9 +41,45 @@ exe pacman -S --noconfirm --needed clang pciutils lua libusb
 log "Clone the chwd source through the GitHub proxy."
 exe git clone --depth 1 "$CHWD_REPO_URL" "$CHWD_SOURCE_DIR/source"
 
-log "Build chwd."
-exe env CARGO_HOME="$CHWD_SOURCE_DIR/cargo-home" \
-    cargo build --locked --release --manifest-path "$CHWD_SOURCE_DIR/source/Cargo.toml"
+# 加入镜像优化 cargo 下载
+CHWD_CARGO_HOME="$CHWD_SOURCE_DIR/cargo-home"
+CHWD_MANIFEST="$CHWD_SOURCE_DIR/source/Cargo.toml"
+install -d -m 0755 "$CHWD_CARGO_HOME"
+
+log "Fetch the locked Rust dependencies through the RSProxy sparse mirror."
+cat >"$CHWD_CARGO_HOME/config.toml" <<'EOF'
+[source.crates-io]
+replace-with = "rsproxy-sparse"
+
+[source.rsproxy-sparse]
+registry = "sparse+https://rsproxy.cn/index/"
+
+[net]
+git-fetch-with-cli = true
+retry = 3
+EOF
+
+if ! exe env CARGO_HOME="$CHWD_CARGO_HOME" \
+    cargo fetch --locked --manifest-path "$CHWD_MANIFEST"; then
+    warn "RSProxy failed. Retry the locked dependency download from the official crates.io sparse index."
+    cat >"$CHWD_CARGO_HOME/config.toml" <<'EOF'
+[registries.crates-io]
+protocol = "sparse"
+
+[net]
+git-fetch-with-cli = true
+retry = 3
+EOF
+    if ! exe env CARGO_HOME="$CHWD_CARGO_HOME" \
+        cargo fetch --locked --manifest-path "$CHWD_MANIFEST"; then
+        error "The locked Rust dependencies for chwd could not be downloaded."
+        exit 1
+    fi
+fi
+
+log "Build chwd offline from the downloaded dependencies."
+exe env CARGO_HOME="$CHWD_CARGO_HOME" \
+    cargo build --locked --offline --release --manifest-path "$CHWD_MANIFEST"
 
 log "Prepare temporary chwd hardware profiles."
 install -d "$CHWD_DATA_DIR/db" "$CHWD_DATA_DIR/ids" "$CHWD_DATA_DIR/local/pci" \
