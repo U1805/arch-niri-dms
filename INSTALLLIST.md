@@ -111,7 +111,7 @@
 | 5.4 | `libnotify`, `wl-clipboard`, `cliphist` | 官方 `extra` | 提供 DMS 通知和剪贴板功能 | DMS 使用这些软件包，但上游元数据未声明依赖关系 |
 | 5.5 | `cava`, `cups-pk-helper`, `matugen`, `qt6-multimedia`, `qt6ct`, `wtype`, `swayosd` | 官方 `extra` | 提供音频显示、打印、主题、音效、Qt6 和按键提示 | 安装后启用并启动 `swayosd-libinput-backend.service` |
 | 5.6 | `dsearch-bin` | AUR | 提供 DMS 文件索引搜索 | 官方仓库没有此软件包。paru 单独安装。配置启动 `dsearch serve` |
-| 5.7 | `greetd` | 官方 `extra` | 提供 DMS 登录界面和 PAM 会话 | 运行 DMS Greeter 的安装和同步命令，然后检查状态 |
+| 5.7 | `greetd-dms-greeter-git` | AUR | 提供独立的 `dms-greeter` 登录界面和管理命令 | 使用 paru 显式安装；其 `greetd` 依赖由 Pacman 从官方 `extra` 解析。随后运行 `dms-greeter install`、`sync` 和 `status`，不通过已弃用的 `dms greeter` 兼容入口隐式安装 |
 
 当前 Portal 与文件管理器的依赖链如下：
 
@@ -146,7 +146,7 @@ pacman 安装这些软件包。
 | 6.1 | 仓库 `dotfiles/` | 本仓库 | 部署桌面配置和用户工具 | 部署到目标用户目录。将 `~/.local/bin` 加入 PATH |
 | 6.2 | 仓库 `etc/` | 本仓库 | 部署系统配置 | 将仓库中的文件逐个部署到 `/etc` |
 | 6.3 | 壁纸列表 | 外部：`wallpapers.txt` 直链 | 用户壁纸 | 下载失败仅记录警告 |
-| 6.4 | 核心软件包清单 | pacman 本地数据库 | 使用 `pacman -T` 验证 5.1 至 5.6 |  |
+| 6.4 | 核心软件包清单 | pacman 本地数据库 | 使用 `pacman -T` 验证 5.1 至 5.7 |  |
 | 6.5 | `~/.config/niri/dms` | 用户配置 | 验证 Niri 配置 | 这是脚本明确检查的配置路径 |
 
 ### 4.4 GRUB 个性化

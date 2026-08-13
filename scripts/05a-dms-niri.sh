@@ -92,15 +92,23 @@ fi
 # ==============================================================================
 section "Shorin DMS" "Install and configure DMS Greeter"
 
-log "Install greetd from the official repository."
-if ! pacman -S --noconfirm --needed greetd; then
-  critical_failure_handler "greetd failed to install."
+GREETER_PACKAGE="greetd-dms-greeter-git"
+log "Install DMS Greeter from AUR with paru."
+if ! as_user paru "${PARU_MAKEPKG_ARGS[@]}" -S --noconfirm --needed "$GREETER_PACKAGE"; then
+  critical_failure_handler "The DMS Greeter AUR package failed to install."
+fi
+printf "%s\n" "$GREETER_PACKAGE" >>"$VERIFY_LIST"
+
+# DMS Greeter 已迁移为独立程序。不要通过旧的 `dms greeter install`
+# 隐式安装 AUR 包；旧版 dms 会用已经废弃的 QML 目录判断安装状态。
+if ! command -v dms-greeter >/dev/null 2>&1; then
+  critical_failure_handler "The dms-greeter command is missing after package installation."
 fi
 
-log "Install and synchronize DMS Greeter."
-if ! as_user dms greeter install --yes || \
-   ! as_user dms greeter sync --yes || \
-   ! as_user dms greeter status; then
+log "Configure and synchronize DMS Greeter."
+if ! as_user dms-greeter install --yes || \
+   ! as_user dms-greeter sync --yes || \
+   ! as_user dms-greeter status; then
   critical_failure_handler "DMS Greeter installation or verification failed"
 fi
 
