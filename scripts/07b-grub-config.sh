@@ -99,6 +99,15 @@ exe install -m 0755 "$PARENT_DIR/grub/config/31_arch_advanced" /etc/grub.d/31_ar
 exe chmod a-x /etc/grub.d/10_linux /etc/grub.d/30_uefi-firmware
 [ ! -e /etc/grub.d/15_uki ] || exe chmod a-x /etc/grub.d/15_uki
 
+# grub-btrfs does not assign a class to its top-level submenu. GRUB themes use
+# this class to select submenu.png, so add it without changing snapshot entries.
+if grep -q "^submenu '\${submenuname}' \${protection_authorized_users}\${unrestricted_access_submenu}{" \
+    /etc/grub.d/41_snapshots-btrfs 2>/dev/null; then
+    exe sed -i \
+        "s|^submenu '\${submenuname}' \${protection_authorized_users}\${unrestricted_access_submenu}{|submenu '\${submenuname}' --class submenu --class snapshots \${protection_authorized_users}\${unrestricted_access_submenu}{|" \
+        /etc/grub.d/41_snapshots-btrfs
+fi
+
 manage_kernel_param "remove" "quiet"
 manage_kernel_param "remove" "splash"
 manage_kernel_param "add" "loglevel=5"
@@ -129,7 +138,10 @@ grep -q 'chainloader /EFI/Linux/arch-linux-zen.efi' "$GRUB_CANDIDATE" || validat
 grep -q "menuentry 'UEFI Firmware Settings' --class efi" "$GRUB_CANDIDATE" || validation_failed=true
 grep -q '^menuentry "Reboot" --class restart' "$GRUB_CANDIDATE" || validation_failed=true
 grep -q '^menuentry "Shutdown" --class shutdown' "$GRUB_CANDIDATE" || validation_failed=true
-grep -qE 'chainloader /EFI/Linux/arch-linux-lts\.efi|gnulinux-simple-|^[[:space:]]*uki[[:space:]]*$' "$GRUB_CANDIDATE" && validation_failed=true
+grep -qE 'gnulinux-simple-|^[[:space:]]*uki[[:space:]]*$' "$GRUB_CANDIDATE" && validation_failed=true
+grep -q "submenu 'Advanced options for Arch Linux'.*--class arch" "$GRUB_CANDIDATE" || validation_failed=true
+grep -q 'chainloader /EFI/Linux/arch-linux-lts\.efi' "$GRUB_CANDIDATE" || \
+    grep -q "menuentry 'Arch Linux, with Linux" "$GRUB_CANDIDATE" || validation_failed=true
 
 menu_line() { grep -n -m1 "$1" "$GRUB_CANDIDATE" | cut -d: -f1; }
 ARCH_LINE=$(menu_line "menuentry 'Arch Linux' --class arch.*arch-uki-zen")
@@ -152,11 +164,10 @@ else
     fi
     [ "$PREVIOUS_LINE" -lt "$UEFI_LINE" ] || validation_failed=true
     PREVIOUS_LINE=$UEFI_LINE
+    [ -n "$ADVANCED_LINE" ] || validation_failed=true
     if [ -n "$ADVANCED_LINE" ]; then
         [ "$PREVIOUS_LINE" -lt "$ADVANCED_LINE" ] || validation_failed=true
         PREVIOUS_LINE=$ADVANCED_LINE
-    else
-        warn "No complete kernel and initramfs pair exists. Omit the advanced options."
     fi
     if [ -n "$SNAPSHOTS_LINE" ]; then
         [ "$PREVIOUS_LINE" -lt "$SNAPSHOTS_LINE" ] || validation_failed=true

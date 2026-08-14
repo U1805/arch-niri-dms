@@ -1,8 +1,38 @@
 #!/bin/sh
 set -eu
 
-# Keep the package-owned 10_linux unchanged. Only expose its Advanced submenu,
-# and only when every emitted kernel entry has a complete initramfs.
+# Prefer an independent LTS UKI as the recovery path. archinstall may use a
+# UKI-only layout, in which case /boot/initramfs-linux-lts.img does not exist
+# and 10_linux cannot produce a safe traditional entry.
+esp_uuid=$(findmnt -no UUID /efi 2>/dev/null || true)
+lts_uki=/efi/EFI/Linux/arch-linux-lts.efi
+if [ -n "$esp_uuid" ] && [ -f "$lts_uki" ]; then
+    sections=$(objdump -h "$lts_uki" 2>/dev/null || true)
+    uki_complete=true
+    for section in .linux .initrd .osrel .cmdline; do
+        printf '%s\n' "$sections" | awk -v wanted="$section" \
+            '$2 == wanted && $3 != "00000000" { found=1 } END { exit !found }' || uki_complete=false
+    done
+    if [ "$uki_complete" = true ]; then
+        cat <<EOF
+submenu 'Advanced options for Arch Linux' --class arch --class submenu {
+    menuentry 'Arch Linux (LTS UKI)' --class arch --class gnu-linux --class os --id 'arch-uki-lts' {
+        savedefault
+        insmod part_gpt
+        insmod fat
+        insmod chain
+        search --no-floppy --fs-uuid --set=root $esp_uuid
+        chainloader /EFI/Linux/arch-linux-lts.efi
+    }
+}
+EOF
+        exit 0
+    fi
+fi
+
+# Keep the package-owned 10_linux unchanged. As a fallback for a traditional
+# /boot layout, expose its Advanced submenu only when each kernel has a full
+# initramfs pair.
 for kernel in /boot/vmlinuz-*; do
     [ -f "$kernel" ] || exit 0
     version=${kernel#/boot/vmlinuz-}

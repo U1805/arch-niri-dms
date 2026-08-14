@@ -36,6 +36,7 @@ backup_and_copy_dotfiles() {
 finalize_user_resources() {
   local tool
   local user_tools=(clean media-info pac pacd pacrrr preview timer change-grub-theme)
+  local niri_runtime_files=(alttab.kdl colors.kdl cursor.kdl layout.kdl outputs.kdl)
 
   LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8 xdg-user-dirs-update --force || true
 
@@ -58,7 +59,17 @@ finalize_user_resources() {
   chmod +x "$HOME/Templates/new.sh"
 
   mkdir -p "$HOME/.config/niri/dms"
-  touch "$HOME/.config/niri/dms/colors.kdl"
+  # DMS owns these device/theme-specific fragments at runtime. They are
+  # intentionally ignored by Git, but every non-optional Niri include must
+  # exist before the first graphical login.
+  for file in "${niri_runtime_files[@]}"; do
+    touch "$HOME/.config/niri/dms/$file"
+  done
+
+  if ! niri validate --config "$HOME/.config/niri/config.kdl"; then
+    printf 'Error: The deployed Niri configuration is invalid.\n' >&2
+    return 1
+  fi
 
   if [[ -f "$DMS_DOC_FILE" ]]; then
     cp -n "$DMS_DOC_FILE" "$HOME/README-Shorin-DMS-Niri.txt" || true
@@ -211,6 +222,13 @@ if [[ ! -e "$HOME_DIR/.config/niri/dms" ]]; then
     write_log "FATAL" "Niri configuration not available: $HOME_DIR/.config/niri/dms."
   exit 1
 fi
+
+for required_niri_file in alttab.kdl colors.kdl cursor.kdl layout.kdl outputs.kdl; do
+  if [[ ! -f "$HOME_DIR/.config/niri/dms/$required_niri_file" ]]; then
+    error "A required generated Niri configuration is missing: $HOME_DIR/.config/niri/dms/$required_niri_file."
+    exit 1
+  fi
+done
 
 for tool in clean media-info pac pacd pacrrr preview timer change-grub-theme; do
   if [[ ! -x "$HOME_DIR/.local/bin/$tool" ]]; then
