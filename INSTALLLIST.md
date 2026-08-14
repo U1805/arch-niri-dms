@@ -156,8 +156,7 @@ pacman 安装这些软件包。
 | 7.1 | 仓库内 `bsol`、`wuthering` 主题 | 本仓库 | 提供 GRUB 主题 | 每次安装均同步到 `/usr/share/grub/themes`，并删除旧文件 |
 | 7.2 | Minegrub | 外部：`Lxtharia/double-minegrub-menu` | 可选 Minecraft 风格 GRUB 主题 | 浅克隆，并直接执行上游 `install.sh` |
 | 7.3 | GRUB 内核参数和菜单 | 本地配置 | 记住上次选择 | 设置 `GRUB_DEFAULT=saved` 和 `GRUB_SAVEDEFAULT=true`。禁用冲突的生成器 |
-| 7.4 | GRUB 菜单顺序和图标 | 本地配置 | 生成 Arch、Windows、UEFI、高级选项、快照和电源菜单 | 按检测结果省略 Windows 或高级选项 |
-| 7.5 | GRUB 候选配置 | 本地配置 | 验证配置后再安装 | 将原配置备份到 `/var/backups/arch-niri-dms/grub/` |
+| 7.4 | GRUB 菜单顺序和图标 | 本地配置 | 生成 Arch、高级选项、Windows、UEFI、快照和电源菜单 | 默认内核按 `linux-zen`、`linux`、`linux-lts`、`linux-hardened` 回退；高级选项仅提供独立的 LTS 恢复入口；按检测结果省略 Windows 或高级选项 |
 | 7.6 | GRUB 电源菜单 | 本地配置 | 添加重启和关机菜单项 | 更新 `/etc/grub.d/99_custom` |
 
 ## 5. 固定应用与安装后工具

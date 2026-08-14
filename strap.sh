@@ -87,7 +87,7 @@ for prefix in "" "https://gh-proxy.com/" "https://gh-proxy.org/"; do
     rm -f -- "$BOOTSTRAP_WRAPPER"
     printf "Get the GitHub download wrapper through %s.\n" "${prefix:-a direct connection}"
     if curl -q -fL --retry 0 --connect-timeout 15 \
-        --speed-limit 65536 --speed-time 20 \
+        --speed-limit 40960 --speed-time 20 \
         -o "$BOOTSTRAP_WRAPPER" "${prefix}${WRAPPER_URL}" && \
        bash -n "$BOOTSTRAP_WRAPPER"; then
         chmod 0755 "$BOOTSTRAP_WRAPPER"

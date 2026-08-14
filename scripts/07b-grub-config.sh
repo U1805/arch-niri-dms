@@ -50,16 +50,31 @@ for required_command in objdump grub-script-check; do
     }
 done
 
-UKI_PATH="/efi/EFI/Linux/arch-linux-zen.efi"
-[ -f "$UKI_PATH" ] || { error "The required Zen UKI is not available: $UKI_PATH."; exit 1; }
-UKI_SECTIONS=$(objdump -h "$UKI_PATH" 2>/dev/null || true)
-for section_name in .linux .initrd .osrel .cmdline; do
-    printf '%s\n' "$UKI_SECTIONS" | awk -v wanted="$section_name" \
-        '$2 == wanted && $3 != "00000000" { found=1 } END { exit !found }' || {
-        error "The Zen UKI is incomplete. The $section_name section is not available or is empty."
-        exit 1
+PRIMARY_KERNEL=""
+for kernel_name in linux-zen linux linux-lts linux-hardened; do
+    candidate_path="/efi/EFI/Linux/arch-$kernel_name.efi"
+    [ -f "$candidate_path" ] || continue
+    candidate_sections=$(objdump -h "$candidate_path" 2>/dev/null || true)
+    candidate_complete=true
+    for section_name in .linux .initrd .osrel .cmdline; do
+        printf '%s\n' "$candidate_sections" | awk -v wanted="$section_name" \
+            '$2 == wanted && $3 != "00000000" { found=1 } END { exit !found }' || \
+            candidate_complete=false
+    done
+    [ "$candidate_complete" = true ] || {
+        warn "Skip the incomplete $kernel_name UKI: $candidate_path."
+        continue
     }
+    PRIMARY_KERNEL="$kernel_name"
+    UKI_PATH="$candidate_path"
+    UKI_SECTIONS="$candidate_sections"
+    break
 done
+[ -n "$PRIMARY_KERNEL" ] || {
+    error "No supported UKI was found. Expected linux-zen, linux, linux-lts, or linux-hardened."
+    exit 1
+}
+success "Use $PRIMARY_KERNEL as the primary GRUB entry."
 for package_generator in /etc/grub.d/10_linux /etc/grub.d/30_uefi-firmware; do
     [ -f "$package_generator" ] || { error "A GRUB generator is not available: $package_generator."; exit 1; }
 done
@@ -75,7 +90,10 @@ GRUB_CANDIDATE=""
 GRUB_NEW_CONFIG="/boot/grub/grub.cfg.arch-niri-dms-new"
 GRUB_COMMITTED=false
 restore_grub_state() {
-    rm -f /etc/grub.d/09_arch_niri_dms_uki /etc/grub.d/30_uefi_firmware_icon /etc/grub.d/31_arch_advanced
+    rm -f /etc/grub.d/09_arch_niri_dms_uki /etc/grub.d/30_uefi_firmware_icon \
+        /etc/grub.d/11_arch_advanced /etc/grub.d/31_arch_advanced \
+        /etc/grub.d/32_uefi_firmware_icon \
+        /etc/grub.d/42_uefi_firmware_icon
     cp -a "$GRUB_BACKUP_DIR/grub.d/." /etc/grub.d/
     cp -a "$GRUB_BACKUP_DIR/grub.default" /etc/default/grub
 }
@@ -94,8 +112,12 @@ section "Step 2/3" "Configure generators, parameters, and menu entries"
 set_grub_value "GRUB_DEFAULT" "saved"
 set_grub_value "GRUB_SAVEDEFAULT" "true"
 exe install -m 0755 "$PARENT_DIR/grub/config/09_arch_niri_dms_uki" /etc/grub.d/09_arch_niri_dms_uki
-exe install -m 0755 "$PARENT_DIR/grub/config/30_uefi_firmware_icon" /etc/grub.d/30_uefi_firmware_icon
-exe install -m 0755 "$PARENT_DIR/grub/config/31_arch_advanced" /etc/grub.d/31_arch_advanced
+exe rm -f /etc/grub.d/31_arch_advanced
+exe install -m 0755 "$PARENT_DIR/grub/config/11_arch_advanced" /etc/grub.d/11_arch_advanced
+exe rm -f /etc/grub.d/30_uefi_firmware_icon
+exe rm -f /etc/grub.d/32_uefi_firmware_icon
+exe rm -f /etc/grub.d/42_uefi_firmware_icon
+exe install -m 0755 "$PARENT_DIR/grub/config/32_uefi_firmware_icon" /etc/grub.d/32_uefi_firmware_icon
 exe chmod a-x /etc/grub.d/10_linux /etc/grub.d/30_uefi-firmware
 [ ! -e /etc/grub.d/15_uki ] || exe chmod a-x /etc/grub.d/15_uki
 
@@ -133,18 +155,17 @@ fi
 
 validation_failed=false
 grub-script-check "$GRUB_CANDIDATE" || validation_failed=true
-grep -q "menuentry 'Arch Linux' --class arch.*--id 'arch-uki-zen'" "$GRUB_CANDIDATE" || validation_failed=true
-grep -q 'chainloader /EFI/Linux/arch-linux-zen.efi' "$GRUB_CANDIDATE" || validation_failed=true
+PRIMARY_ENTRY_ID=${PRIMARY_KERNEL#linux-}
+[ "$PRIMARY_KERNEL" != linux ] || PRIMARY_ENTRY_ID=linux
+grep -q "menuentry 'Arch Linux' --class arch.*--id 'arch-uki-$PRIMARY_ENTRY_ID'" "$GRUB_CANDIDATE" || validation_failed=true
+grep -q "chainloader /EFI/Linux/arch-$PRIMARY_KERNEL.efi" "$GRUB_CANDIDATE" || validation_failed=true
 grep -q "menuentry 'UEFI Firmware Settings' --class efi" "$GRUB_CANDIDATE" || validation_failed=true
 grep -q '^menuentry "Reboot" --class restart' "$GRUB_CANDIDATE" || validation_failed=true
 grep -q '^menuentry "Shutdown" --class shutdown' "$GRUB_CANDIDATE" || validation_failed=true
 grep -qE 'gnulinux-simple-|^[[:space:]]*uki[[:space:]]*$' "$GRUB_CANDIDATE" && validation_failed=true
-grep -q "submenu 'Advanced options for Arch Linux'.*--class arch" "$GRUB_CANDIDATE" || validation_failed=true
-grep -q 'chainloader /EFI/Linux/arch-linux-lts\.efi' "$GRUB_CANDIDATE" || \
-    grep -q "menuentry 'Arch Linux, with Linux" "$GRUB_CANDIDATE" || validation_failed=true
 
 menu_line() { grep -n -m1 "$1" "$GRUB_CANDIDATE" | cut -d: -f1; }
-ARCH_LINE=$(menu_line "menuentry 'Arch Linux' --class arch.*arch-uki-zen")
+ARCH_LINE=$(menu_line "menuentry 'Arch Linux' --class arch.*arch-uki-$PRIMARY_ENTRY_ID")
 WINDOWS_LINE=$(menu_line "menuentry 'Windows Boot Manager" || true)
 UEFI_LINE=$(menu_line "menuentry 'UEFI Firmware Settings'" || true)
 ADVANCED_LINE=$(menu_line "^submenu 'Advanced options for Arch Linux'" || true)
@@ -156,6 +177,10 @@ if [ -z "$ARCH_LINE" ] || [ -z "$UEFI_LINE" ] || [ -z "$REBOOT_LINE" ] || [ -z "
     validation_failed=true
 else
     PREVIOUS_LINE=$ARCH_LINE
+    if [ -n "$ADVANCED_LINE" ]; then
+        [ "$PREVIOUS_LINE" -lt "$ADVANCED_LINE" ] || validation_failed=true
+        PREVIOUS_LINE=$ADVANCED_LINE
+    fi
     if [ -n "$WINDOWS_LINE" ]; then
         [ "$PREVIOUS_LINE" -lt "$WINDOWS_LINE" ] || validation_failed=true
         PREVIOUS_LINE=$WINDOWS_LINE
@@ -164,11 +189,6 @@ else
     fi
     [ "$PREVIOUS_LINE" -lt "$UEFI_LINE" ] || validation_failed=true
     PREVIOUS_LINE=$UEFI_LINE
-    [ -n "$ADVANCED_LINE" ] || validation_failed=true
-    if [ -n "$ADVANCED_LINE" ]; then
-        [ "$PREVIOUS_LINE" -lt "$ADVANCED_LINE" ] || validation_failed=true
-        PREVIOUS_LINE=$ADVANCED_LINE
-    fi
     if [ -n "$SNAPSHOTS_LINE" ]; then
         [ "$PREVIOUS_LINE" -lt "$SNAPSHOTS_LINE" ] || validation_failed=true
         PREVIOUS_LINE=$SNAPSHOTS_LINE

@@ -4,22 +4,35 @@ set -eu
 esp_uuid=$(findmnt -no UUID /efi 2>/dev/null || true)
 [ -n "$esp_uuid" ] || exit 0
 
-uki=/efi/EFI/Linux/arch-linux-zen.efi
-[ -f "$uki" ] || exit 0
+uki_complete() {
+    [ -f "$1" ] || return 1
+    sections=$(objdump -h "$1" 2>/dev/null || true)
+    for section in .linux .initrd .osrel .cmdline; do
+        printf '%s\n' "$sections" | awk -v wanted="$section" \
+            '$2 == wanted && $3 != "00000000" { found=1 } END { exit !found }' || return 1
+    done
+}
 
-sections=$(objdump -h "$uki" 2>/dev/null || true)
-for section in .linux .initrd .osrel .cmdline; do
-    printf '%s\n' "$sections" | awk -v wanted="$section" \
-        '$2 == wanted && $3 != "00000000" { found=1 } END { exit !found }' || exit 0
+selected_kernel=
+for kernel in linux-zen linux linux-lts linux-hardened; do
+    candidate="/efi/EFI/Linux/arch-$kernel.efi"
+    if uki_complete "$candidate"; then
+        selected_kernel=$kernel
+        uki=$candidate
+        break
+    fi
 done
+[ -n "$selected_kernel" ] || exit 0
+entry_id=${selected_kernel#linux-}
+[ "$selected_kernel" != linux ] || entry_id=linux
 
 cat <<EOF
-menuentry 'Arch Linux' --class arch --class gnu-linux --class os --id 'arch-uki-zen' {
+menuentry 'Arch Linux' --class arch --class gnu-linux --class os --id 'arch-uki-$entry_id' {
     savedefault
     insmod part_gpt
     insmod fat
     insmod chain
     search --no-floppy --fs-uuid --set=root $esp_uuid
-    chainloader /EFI/Linux/arch-linux-zen.efi
+    chainloader /EFI/Linux/arch-$selected_kernel.efi
 }
 EOF

@@ -1,19 +1,28 @@
 #!/bin/sh
 set -eu
 
-# Prefer an independent LTS UKI as the recovery path. archinstall may use a
-# UKI-only layout, in which case /boot/initramfs-linux-lts.img does not exist
-# and 10_linux cannot produce a safe traditional entry.
+# Prefer an independent LTS UKI as the recovery path. Do not duplicate it when
+# linux-lts is already the primary fallback selected by the main entry.
 esp_uuid=$(findmnt -no UUID /efi 2>/dev/null || true)
-lts_uki=/efi/EFI/Linux/arch-linux-lts.efi
-if [ -n "$esp_uuid" ] && [ -f "$lts_uki" ]; then
-    sections=$(objdump -h "$lts_uki" 2>/dev/null || true)
-    uki_complete=true
+uki_complete() {
+    [ -f "$1" ] || return 1
+    sections=$(objdump -h "$1" 2>/dev/null || true)
     for section in .linux .initrd .osrel .cmdline; do
         printf '%s\n' "$sections" | awk -v wanted="$section" \
-            '$2 == wanted && $3 != "00000000" { found=1 } END { exit !found }' || uki_complete=false
+            '$2 == wanted && $3 != "00000000" { found=1 } END { exit !found }' || return 1
     done
-    if [ "$uki_complete" = true ]; then
+}
+
+if [ -n "$esp_uuid" ] && uki_complete /efi/EFI/Linux/arch-linux-lts.efi; then
+    primary_kernel=
+    for kernel in linux-zen linux linux-lts linux-hardened; do
+        candidate="/efi/EFI/Linux/arch-$kernel.efi"
+        uki_complete "$candidate" || continue
+        primary_kernel=$kernel
+        break
+    done
+
+    if [ "$primary_kernel" != linux-lts ]; then
         cat <<EOF
 submenu 'Advanced options for Arch Linux' --class arch --class submenu {
     menuentry 'Arch Linux (LTS UKI)' --class arch --class gnu-linux --class os --id 'arch-uki-lts' {
@@ -28,6 +37,7 @@ submenu 'Advanced options for Arch Linux' --class arch --class submenu {
 EOF
         exit 0
     fi
+    exit 0
 fi
 
 # Keep the package-owned 10_linux unchanged. As a fallback for a traditional
@@ -37,7 +47,7 @@ for kernel in /boot/vmlinuz-*; do
     [ -f "$kernel" ] || exit 0
     version=${kernel#/boot/vmlinuz-}
     [ -s "/boot/initramfs-$version.img" ] || {
-        echo "31_arch_advanced: skipping unsafe $version entry without a complete initramfs" >&2
+        echo "11_arch_advanced: skipping unsafe $version entry without a complete initramfs" >&2
         exit 0
     }
 done

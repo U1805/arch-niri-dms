@@ -138,25 +138,16 @@ ping -c 3 bilibili.com
 运行：
 
 ```bash
-strap_url=https://raw.githubusercontent.com/U1805/arch-niri-dms/refs/heads/main/strap.sh
-strap_file=/tmp/arch-niri-dms-strap.sh
-strap_ready=false
-for prefix in "" "https://gh-proxy.com/" "https://gh-proxy.org/"; do
-    rm -f -- "$strap_file"
-    if curl -q -fL --retry 0 --connect-timeout 15 \
-        --speed-limit 65536 --speed-time 20 \
-        -o "$strap_file" "${prefix}${strap_url}" && bash -n "$strap_file"; then
-        strap_ready=true
-        break
-    fi
-done
-if [ "$strap_ready" = true ]; then
-    bash "$strap_file"
-else
-    echo "strap.sh 下载失败" >&2
-fi
-rm -f -- "$strap_file"
+curl -fsSL https://raw.githubusercontent.com/U1805/arch-niri-dms/refs/heads/main/strap.sh | bash
 ```
 
-入口和后续安装均优先直连 GitHub；连接失败或连续 20 秒低于 64 KiB/s 时，依次回退到
-`gh-proxy.com` 和 `gh-proxy.org`。临时下载失败后会清理不完整文件。
+## 虚拟机的 3D 加速
+
+使用 VMware、Virt Manager/QEMU 等虚拟机测试时，必须启用虚拟显卡的 3D 加速。
+Niri 是 Wayland 合成器，需要虚拟 GPU 提供可用的 DRM 和 OpenGL 渲染能力。
+
+- VMware：在虚拟机显示设置中启用 **Accelerate 3D graphics**。
+- Virt Manager/QEMU：使用支持 3D 的 Virtio 显卡并启用 3D acceleration（virgl）。
+
+如果安装后 `greetd` 和 Niri 进程均在运行，但屏幕仍然全黑，并在日志中看到
+`no allocator available for device`、`DeviceMissing`，或者虚拟 GPU 显示 `-virgl`，应先检查宿主侧的 3D 加速。

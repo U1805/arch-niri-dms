@@ -3,7 +3,7 @@
 set -euo pipefail
 
 readonly real_git="/usr/bin/git"
-readonly low_speed_limit="${GITHUB_DIRECT_SPEED_LIMIT:-65536}"
+readonly low_speed_limit="${GITHUB_DIRECT_SPEED_LIMIT:-40960}"
 readonly low_speed_time="${GITHUB_DIRECT_SPEED_TIME:-20}"
 readonly -a proxy_prefixes=(
     "https://gh-proxy.com/"

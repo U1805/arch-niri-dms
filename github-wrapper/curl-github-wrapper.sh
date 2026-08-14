@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-readonly direct_speed_limit="${GITHUB_DIRECT_SPEED_LIMIT:-65536}"
+readonly direct_speed_limit="${GITHUB_DIRECT_SPEED_LIMIT:-40960}"
 readonly direct_speed_time="${GITHUB_DIRECT_SPEED_TIME:-20}"
 readonly -a proxy_prefixes=(
     "https://gh-proxy.com/"
