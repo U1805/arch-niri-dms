@@ -7,6 +7,8 @@ set -euo pipefail
 # ==============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PARENT_DIR="$(dirname "$SCRIPT_DIR")"
+GITHUB_GIT_WRAPPER="${SHORIN_GITHUB_GIT_WRAPPER:-$PARENT_DIR/github-wrapper/git-github-wrapper.sh}"
 if [[ -f "$SCRIPT_DIR/00-utils.sh" ]]; then
     source "$SCRIPT_DIR/00-utils.sh"
 else
@@ -33,13 +35,14 @@ cleanup_chwd() {
     rm -rf -- "$CHWD_SOURCE_DIR"
     rm -rf -- "$CHWD_DATA_DIR"
 }
-trap cleanup_chwd EXIT INT TERM
+trap cleanup_chwd EXIT
+trap 'exit 130' INT TERM
 
 log "Install the official build and runtime dependencies for chwd."
 exe pacman -S --noconfirm --needed clang pciutils lua libusb
 
-log "Clone the chwd source through the GitHub proxy."
-exe git clone --depth 1 "$CHWD_REPO_URL" "$CHWD_SOURCE_DIR/source"
+log "Clone the chwd source through the unified GitHub route."
+exe "$GITHUB_GIT_WRAPPER" clone --depth 1 "$CHWD_REPO_URL" "$CHWD_SOURCE_DIR/source"
 
 # 加入镜像优化 cargo 下载
 CHWD_CARGO_HOME="$CHWD_SOURCE_DIR/cargo-home"

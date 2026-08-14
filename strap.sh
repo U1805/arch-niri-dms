@@ -4,7 +4,7 @@
 # Shorin Arch 安装入口
 # 1. 检查操作系统和处理器架构。
 # 2. 使用 root 或 sudo 执行特权命令。
-# 3. 检查下载命令，并通过 GitHub 代理下载仓库。
+# 3. 引导统一 GitHub 下载 wrapper，并下载仓库。
 # 4. 启动 install.sh。
 # ==============================================================================
 
@@ -49,8 +49,19 @@ run_as_root() {
 
 # 下载配置
 TARGET_BRANCH="${BRANCH:-main}"
-TARBALL_URL="https://gh-proxy.org/https://github.com/U1805/arch-niri-dms/archive/refs/heads/${TARGET_BRANCH}.tar.gz"
+TARBALL_URL="https://github.com/U1805/arch-niri-dms/archive/refs/heads/${TARGET_BRANCH}.tar.gz"
 TARGET_DIR="/tmp/arch-niri-dms"
+BOOTSTRAP_WRAPPER="/tmp/arch-niri-dms-curl-github-wrapper.sh"
+ARCHIVE_PATH="/tmp/arch-niri-dms-${TARGET_BRANCH}.tar.gz"
+
+cleanup_download() {
+    if [ -d "$TARGET_DIR" ]; then
+        run_as_root rm -rf -- "$TARGET_DIR"
+    fi
+    rm -f -- "$BOOTSTRAP_WRAPPER" "$ARCHIVE_PATH"
+}
+trap cleanup_download EXIT
+trap 'exit 130' INT TERM
 
 printf "%bInstall branch: %s. Architecture: %s.%b\n" "$BLUE" "$TARGET_BRANCH" "$ARCH_NAME" "$NC"
 
@@ -68,6 +79,28 @@ if [ ${#MISSING_BOOTSTRAP_CMDS[@]} -gt 0 ]; then
     exit 1
 fi
 
+# `strap.sh` 可能通过网络独立执行，此时仓库内 wrapper 尚不可用。
+# 这里只负责按统一顺序引导取得 wrapper；后续 GitHub 文件均由 wrapper 路由。
+WRAPPER_URL="https://raw.githubusercontent.com/U1805/arch-niri-dms/refs/heads/${TARGET_BRANCH}/github-wrapper/curl-github-wrapper.sh"
+WRAPPER_READY=false
+for prefix in "" "https://gh-proxy.com/" "https://gh-proxy.org/"; do
+    rm -f -- "$BOOTSTRAP_WRAPPER"
+    printf "Get the GitHub download wrapper through %s.\n" "${prefix:-a direct connection}"
+    if curl -q -fL --retry 0 --connect-timeout 15 \
+        --speed-limit 65536 --speed-time 20 \
+        -o "$BOOTSTRAP_WRAPPER" "${prefix}${WRAPPER_URL}" && \
+       bash -n "$BOOTSTRAP_WRAPPER"; then
+        chmod 0755 "$BOOTSTRAP_WRAPPER"
+        WRAPPER_READY=true
+        break
+    fi
+done
+
+if [ "$WRAPPER_READY" != true ]; then
+    printf "%bError: The GitHub download wrapper could not be downloaded.%b\n" "$RED" "$NC"
+    exit 1
+fi
+
 # 重新创建下载目录。
 if [ -d "$TARGET_DIR" ]; then
     run_as_root rm -rf "$TARGET_DIR"
@@ -77,23 +110,16 @@ mkdir -p "$TARGET_DIR"
 # 下载并解压仓库。curl 显示传输进度。
 printf "Download and extract the repository to %s.\n" "$TARGET_DIR"
 
-for attempt in 1 2 3; do
-    if curl --fail --location "$TARBALL_URL" | tar -xz -C "$TARGET_DIR" --strip-components=1; then
-        run_as_root chmod 755 "$TARGET_DIR"
-        printf "%b\nThe repository download is complete.%b\n" "$GREEN" "$NC"
-        break
-    fi
-    
-    if [ "$attempt" -eq 3 ]; then
-        printf "%bError: The %s branch download failed after three attempts. Check the network connection.%b\n" "$RED" "$TARGET_BRANCH" "$NC"
-        exit 1
-    fi
-    
-    printf "%bWarning: Download attempt %d of 3 failed. Retry in three seconds.%b\n" "$RED" "$attempt" "$NC"
-    sleep 3
-    run_as_root rm -rf "$TARGET_DIR"
-    mkdir -p "$TARGET_DIR"
-done
+if ! "$BOOTSTRAP_WRAPPER" "$ARCHIVE_PATH" "$TARBALL_URL"; then
+    printf "%bError: The %s branch download failed through all routes.%b\n" "$RED" "$TARGET_BRANCH" "$NC"
+    exit 1
+fi
+if ! tar -xzf "$ARCHIVE_PATH" -C "$TARGET_DIR" --strip-components=1; then
+    printf "%bError: The downloaded repository archive is invalid.%b\n" "$RED" "$NC"
+    exit 1
+fi
+run_as_root chmod 755 "$TARGET_DIR"
+printf "%b\nThe repository download is complete.%b\n" "$GREEN" "$NC"
 
 # 启动安装程序。
 cd "$TARGET_DIR"

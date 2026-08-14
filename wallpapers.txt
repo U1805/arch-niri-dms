@@ -1,5 +1,5 @@
-https://chibisafe.lemonade-jam.de5.net/yVBR6MVryq5s.png
-https://chibisafe.lemonade-jam.de5.net/hpXA4W8AAO0a.png
-https://chibisafe.lemonade-jam.de5.net/HFs38EKZJlmy.png
-https://chibisafe.lemonade-jam.de5.net/2hQ5DcFgejPo.png
-https://chibisafe.lemonade-jam.de5.net/ki1eFH2sX89i.png
+http://filebrowser.lemonade-jam.de5.net/public/api/resources/download?hash=1ZO3yTyPDbYt7WWy4zVIrA|yVBR6MVryq5s.png
+http://filebrowser.lemonade-jam.de5.net/public/api/resources/download?hash=83ufdpgxHDsObFBB41O0Bg|hpXA4W8AAO0a.png
+http://filebrowser.lemonade-jam.de5.net/public/api/resources/download?hash=XtQe5LQ0Tob4vqiP-AdO1g|HFs38EKZJlmy.png
+http://filebrowser.lemonade-jam.de5.net/public/api/resources/download?hash=LyA2stU9w7CCDBnNfUu26A|2hQ5DcFgejPo.png
+http://filebrowser.lemonade-jam.de5.net/public/api/resources/download?hash=afntZAB9HiCDRiZ78RxjDw|ki1eFH2sX89i.png

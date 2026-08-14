@@ -138,5 +138,25 @@ ping -c 3 bilibili.com
 运行：
 
 ```bash
-curl -L https://gh-proxy.org/https://raw.githubusercontent.com/U1805/arch-niri-dms/refs/heads/main/strap.sh | bash
+strap_url=https://raw.githubusercontent.com/U1805/arch-niri-dms/refs/heads/main/strap.sh
+strap_file=/tmp/arch-niri-dms-strap.sh
+strap_ready=false
+for prefix in "" "https://gh-proxy.com/" "https://gh-proxy.org/"; do
+    rm -f -- "$strap_file"
+    if curl -q -fL --retry 0 --connect-timeout 15 \
+        --speed-limit 65536 --speed-time 20 \
+        -o "$strap_file" "${prefix}${strap_url}" && bash -n "$strap_file"; then
+        strap_ready=true
+        break
+    fi
+done
+if [ "$strap_ready" = true ]; then
+    bash "$strap_file"
+else
+    echo "strap.sh 下载失败" >&2
+fi
+rm -f -- "$strap_file"
 ```
+
+入口和后续安装均优先直连 GitHub；连接失败或连续 20 秒低于 64 KiB/s 时，依次回退到
+`gh-proxy.com` 和 `gh-proxy.org`。临时下载失败后会清理不完整文件。

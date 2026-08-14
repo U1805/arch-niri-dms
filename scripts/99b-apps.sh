@@ -51,6 +51,9 @@ if [[ "${1:-}" == "--user-desktop-settings" ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PARENT_DIR="$(dirname "$SCRIPT_DIR")"
+GITHUB_CURL_WRAPPER="${SHORIN_GITHUB_CURL_WRAPPER:-$PARENT_DIR/github-wrapper/curl-github-wrapper.sh}"
+GITHUB_GIT_WRAPPER="${SHORIN_GITHUB_GIT_WRAPPER:-$PARENT_DIR/github-wrapper/git-github-wrapper.sh}"
 
 if [[ -f "$SCRIPT_DIR/00-utils.sh" ]]; then
   source "$SCRIPT_DIR/00-utils.sh"
@@ -73,6 +76,39 @@ if [[ -z "$TARGET_USER" || ! -d "$HOME_DIR" ]]; then
   exit 1
 fi
 info_kv "Target user" "$TARGET_USER"
+
+RIME_CLONE=""
+EASYTIER_TMP=""
+OCR_TMP=""
+ACTIVE_DOWNLOAD_PART=""
+XVFB_STATE_DIR=""
+XVFB_TEMP_PACKAGES=()
+
+cleanup_temporary_xvfb() {
+  if [[ ${#XVFB_TEMP_PACKAGES[@]} -eq 0 ]]; then
+    return 0
+  fi
+
+  log "Remove packages introduced for the temporary Xvfb session."
+  if pacman -Rns --noconfirm "${XVFB_TEMP_PACKAGES[@]}"; then
+    XVFB_TEMP_PACKAGES=()
+    return 0
+  fi
+
+  warn "The temporary Xvfb packages could not be removed automatically."
+  return 1
+}
+
+cleanup_app_temporary_files() {
+  cleanup_temporary_xvfb || true
+  [[ -z "$RIME_CLONE" ]] || rm -rf -- "$RIME_CLONE"
+  [[ -z "$EASYTIER_TMP" ]] || rm -rf -- "$EASYTIER_TMP"
+  [[ -z "$OCR_TMP" ]] || rm -rf -- "$OCR_TMP"
+  [[ -z "$ACTIVE_DOWNLOAD_PART" ]] || rm -f -- "$ACTIVE_DOWNLOAD_PART"
+  [[ -z "$XVFB_STATE_DIR" ]] || rm -rf -- "$XVFB_STATE_DIR"
+}
+trap cleanup_app_temporary_files EXIT
+trap 'exit 130' INT TERM
 
 as_user() {
   runuser -u "$TARGET_USER" -- "$@"
@@ -192,20 +228,81 @@ if command -v wine &>/dev/null; then
   pacman -S --noconfirm --needed wine wine-gecko wine-mono
 
   WINE_PREFIX="$HOME_DIR/.wine"
-  if [[ ! -d "$WINE_PREFIX" ]]; then
-    log "Initialize the Wine prefix."
-    as_user env WINEPREFIX="$WINE_PREFIX" WINEDLLOVERRIDES="mscoree,mshtml=" wineboot -u
-    as_user env WINEPREFIX="$WINE_PREFIX" wineserver -w
+  WINE_MARKER="$WINE_PREFIX/.arch-niri-dms-initialized"
+  WINE_PREFIX_CREATED=false
+  WINE_READY=false
+  if [[ -f "$WINE_MARKER" ]]; then
+    log "The Wine prefix is already initialized."
+    WINE_READY=true
   else
-    log "The Wine prefix exists."
+    [[ -d "$WINE_PREFIX" ]] || WINE_PREFIX_CREATED=true
+    WINEBOOT_SUCCESS=false
+    XVFB_AVAILABLE=false
+
+    if pacman -Qq xorg-server-xvfb >/dev/null 2>&1; then
+      log "Use the installed Xvfb package for Wine initialization."
+      XVFB_AVAILABLE=true
+    else
+      log "Temporarily install Xvfb for headless Wine initialization."
+      XVFB_STATE_DIR=$(mktemp -d /tmp/arch-niri-dms-xvfb.XXXXXX)
+      pacman -Qq | LC_ALL=C sort >"$XVFB_STATE_DIR/packages.before"
+
+      if pacman -S --noconfirm --needed xorg-server-xvfb; then
+        XVFB_AVAILABLE=true
+      else
+        warn "The temporary Xvfb installation failed."
+      fi
+
+      pacman -Qq | LC_ALL=C sort >"$XVFB_STATE_DIR/packages.after"
+      mapfile -t XVFB_TEMP_PACKAGES < <(
+        comm -13 "$XVFB_STATE_DIR/packages.before" "$XVFB_STATE_DIR/packages.after"
+      )
+    fi
+
+    if [[ "$XVFB_AVAILABLE" == true ]] && ! command -v xvfb-run >/dev/null 2>&1; then
+      warn "xorg-server-xvfb is installed, but xvfb-run is unavailable."
+      XVFB_AVAILABLE=false
+    fi
+
+    if [[ "$XVFB_AVAILABLE" == true ]]; then
+      log "Initialize or repair the Wine prefix in a temporary Xvfb display."
+      if as_user env \
+          HOME="$HOME_DIR" USER="$TARGET_USER" LOGNAME="$TARGET_USER" \
+          WINEPREFIX="$WINE_PREFIX" WINEDLLOVERRIDES="mscoree,mshtml=" \
+          xvfb-run -a -s "-screen 0 1024x768x24" \
+          bash -c 'wineboot -u && wineserver -w'; then
+        WINEBOOT_SUCCESS=true
+      fi
+    fi
+
+    if ! cleanup_temporary_xvfb; then
+      FAILED_PACKAGES+=("cleanup:xorg-server-xvfb")
+    fi
+    [[ -z "$XVFB_STATE_DIR" ]] || rm -rf -- "$XVFB_STATE_DIR"
+    XVFB_STATE_DIR=""
+
+    if [[ "$WINEBOOT_SUCCESS" == true ]]; then
+      touch "$WINE_MARKER"
+      chown "$TARGET_USER:" "$WINE_MARKER"
+      WINE_READY=true
+    else
+      if [[ "$WINE_PREFIX_CREATED" == true ]]; then
+        rm -rf -- "$WINE_PREFIX"
+        warn "Wine prefix initialization failed. Remove the newly created incomplete prefix."
+      else
+        warn "Wine prefix initialization failed. Keep the existing prefix unchanged."
+      fi
+      FAILED_PACKAGES+=("config:wine-prefix")
+    fi
   fi
 
-  FONT_DEST="$WINE_PREFIX/drive_c/windows/Fonts"
+  if [[ "$WINE_READY" == true ]]; then
+    FONT_DEST="$WINE_PREFIX/drive_c/windows/Fonts"
   FONT_URLS=(
-    "https://gh-proxy.org/https://github.com/SHORiN-KiWATA/shorin-arch-setup/raw/refs/heads/main/resources/windows-sim-fonts/simfang.ttf"
-    "https://gh-proxy.org/https://github.com/SHORiN-KiWATA/shorin-arch-setup/raw/refs/heads/main/resources/windows-sim-fonts/simhei.ttf"
-    "https://gh-proxy.org/https://github.com/SHORiN-KiWATA/shorin-arch-setup/raw/refs/heads/main/resources/windows-sim-fonts/simkai.ttf"
-    "https://gh-proxy.org/https://github.com/SHORiN-KiWATA/shorin-arch-setup/raw/refs/heads/main/resources/windows-sim-fonts/simsun.ttc"
+    "https://github.com/SHORiN-KiWATA/shorin-arch-setup/raw/refs/heads/main/resources/windows-sim-fonts/simfang.ttf"
+    "https://github.com/SHORiN-KiWATA/shorin-arch-setup/raw/refs/heads/main/resources/windows-sim-fonts/simhei.ttf"
+    "https://github.com/SHORiN-KiWATA/shorin-arch-setup/raw/refs/heads/main/resources/windows-sim-fonts/simkai.ttf"
+    "https://github.com/SHORiN-KiWATA/shorin-arch-setup/raw/refs/heads/main/resources/windows-sim-fonts/simsun.ttc"
   )
 
   log "Download Windows fonts."
@@ -214,10 +311,22 @@ if command -v wine &>/dev/null; then
 
   for url in "${FONT_URLS[@]}"; do
     filename="${url##*/}"
+    font_target="$FONT_DEST/$filename"
+    font_part="$font_target.part"
     log " -> $filename"
-    if curl -fsSL --retry 3 -o "$FONT_DEST/$filename" "$url"; then
-      chown "$TARGET_USER:" "$FONT_DEST/$filename"
+    if [[ -s "$font_target" ]]; then
+      log "$filename is already installed."
+      continue
+    fi
+    ACTIVE_DOWNLOAD_PART="$font_part"
+    rm -f -- "$font_part"
+    if "$GITHUB_CURL_WRAPPER" "$font_part" "$url"; then
+      mv -f -- "$font_part" "$font_target"
+      ACTIVE_DOWNLOAD_PART=""
+      chown "$TARGET_USER:" "$font_target"
     else
+      rm -f -- "$font_part"
+      ACTIVE_DOWNLOAD_PART=""
       warn "The download failed: $url."
       font_ok=false
     fi
@@ -232,7 +341,10 @@ if command -v wine &>/dev/null; then
     as_user env WINEPREFIX="$WINE_PREFIX" wineserver -k || true
   fi
 
-  success "The Wine fonts are installed. The font cache is refreshed."
+    if $font_ok; then
+      success "The Wine fonts are installed. The font cache is refreshed."
+    fi
+  fi
 fi
 
 # ==============================================================================
@@ -241,40 +353,51 @@ fi
 section "Post-install" "Configure the Rime schema"
 
 RIME_DIR="$HOME_DIR/.local/share/fcitx5/rime"
-RIME_CLONE="/tmp/rime-schema-$TARGET_USER"
 RIME_REPO="https://github.com/U1805/rime.git"
 WANXIANG_URL="https://cnb.cool/amzxyz/rime-wanxiang/-/releases/download/model/wanxiang-lts-zh-hans.gram"
+RIME_MARKER="$RIME_DIR/.arch-niri-dms-installed"
 
-log "Clone the U1805/rime schema from $RIME_REPO."
-rm -rf "$RIME_CLONE"
-
-if git clone --depth 1 --filter=blob:none "$RIME_REPO" "$RIME_CLONE"; then
-  as_user mkdir -p "$RIME_DIR"
-
-  if curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 \
-    -o "$RIME_CLONE/wanxiang-lts-zh-hans.gram" "$WANXIANG_URL"; then
-    success "The grammar model is downloaded."
-  else
-    warn "The Wanxiang grammar model download failed."
-    FAILED_PACKAGES+=("manual:wanxiang-lts-zh-hans.gram")
-  fi
-
-  # 仅部署运行数据。不要将仓库元数据、文档和维护脚本部署到 Rime 目录。
-  for runtime_dir in dicts lua opencc; do
-    if [[ -d "$RIME_CLONE/$runtime_dir" ]]; then
-      cp -a "$RIME_CLONE/$runtime_dir" "$RIME_DIR/"
-    fi
-  done
-  find "$RIME_CLONE" -maxdepth 1 -type f \
-    \( -name '*.yaml' -o -name '*.txt' -o -name '*.gram' \) \
-    -exec cp -a -t "$RIME_DIR" -- {} +
-  chown -R "$TARGET_USER:" "$RIME_DIR"
-  success "The U1805/rime schema is deployed."
+if [[ -f "$RIME_MARKER" && -s "$RIME_DIR/wanxiang-lts-zh-hans.gram" ]]; then
+  success "The U1805/rime schema and grammar model are already installed."
 else
-  warn "The U1805/rime clone failed. Rime will use the system defaults."
+  RIME_CLONE=$(mktemp -d "/tmp/rime-schema-$TARGET_USER.XXXXXX")
+  log "Clone the U1805/rime schema from $RIME_REPO."
+
+  if "$GITHUB_GIT_WRAPPER" clone --depth 1 --filter=blob:none \
+      "$RIME_REPO" "$RIME_CLONE/source"; then
+    if curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 \
+      -o "$RIME_CLONE/wanxiang-lts-zh-hans.gram.part" "$WANXIANG_URL"; then
+      mv "$RIME_CLONE/wanxiang-lts-zh-hans.gram.part" \
+        "$RIME_CLONE/source/wanxiang-lts-zh-hans.gram"
+      success "The grammar model is downloaded."
+    else
+      rm -f -- "$RIME_CLONE/wanxiang-lts-zh-hans.gram.part"
+      warn "The Wanxiang grammar model download failed. Keep the current Rime directory unchanged."
+      FAILED_PACKAGES+=("manual:wanxiang-lts-zh-hans.gram")
+    fi
+
+    if [[ -s "$RIME_CLONE/source/wanxiang-lts-zh-hans.gram" ]]; then
+      as_user mkdir -p "$RIME_DIR"
+      # 仅部署运行数据。不要将仓库元数据、文档和维护脚本部署到 Rime 目录。
+      for runtime_dir in dicts lua opencc; do
+        if [[ -d "$RIME_CLONE/source/$runtime_dir" ]]; then
+          cp -a "$RIME_CLONE/source/$runtime_dir" "$RIME_DIR/"
+        fi
+      done
+      find "$RIME_CLONE/source" -maxdepth 1 -type f \
+        \( -name '*.yaml' -o -name '*.txt' -o -name '*.gram' \) \
+        -exec cp -a -t "$RIME_DIR" -- {} +
+      touch "$RIME_MARKER"
+      chown -R "$TARGET_USER:" "$RIME_DIR"
+      success "The U1805/rime schema is deployed."
+    fi
+  else
+    warn "The U1805/rime clone failed. Keep the current Rime directory unchanged."
+  fi
 fi
 
-rm -rf "$RIME_CLONE"
+[[ -z "$RIME_CLONE" ]] || rm -rf -- "$RIME_CLONE"
+RIME_CLONE=""
 
 # ==============================================================================
 # 6. Additional Tooling
@@ -283,21 +406,45 @@ section "Post-install" "Install additional tools"
 
 # --- mark-shot ocr ---
 log "Install mark-shot OCR."
-as_user uv venv "$HOME_DIR/.local/share/mark-shot/ocr-venv"
-as_user uv pip install --python "$HOME_DIR/.local/share/mark-shot/ocr-venv/bin/python" -U pip rapidocr onnxruntime
-success "mark-shot OCR is installed."
+OCR_VENV="$HOME_DIR/.local/share/mark-shot/ocr-venv"
+if [[ -x "$OCR_VENV/bin/python" ]] && as_user "$OCR_VENV/bin/python" -c 'import rapidocr, onnxruntime' 2>/dev/null; then
+  success "mark-shot OCR is already installed."
+else
+  OCR_PARENT="$HOME_DIR/.local/share/mark-shot"
+  as_user mkdir -p "$OCR_PARENT"
+  OCR_TMP=$(runuser -u "$TARGET_USER" -- mktemp -d "$OCR_PARENT/ocr-venv.new.XXXXXX")
+  if as_user uv venv "$OCR_TMP" && \
+     as_user uv pip install --python "$OCR_TMP/bin/python" \
+       --default-index https://pypi.tuna.tsinghua.edu.cn/simple \
+       -U pip rapidocr onnxruntime && \
+     as_user "$OCR_TMP/bin/python" -c 'import rapidocr, onnxruntime'; then
+    rm -rf -- "$OCR_VENV"
+    mv "$OCR_TMP" "$OCR_VENV"
+    OCR_TMP=""
+    chown -R "$TARGET_USER:" "$OCR_VENV"
+    success "mark-shot OCR is installed."
+  else
+    rm -rf -- "$OCR_TMP"
+    OCR_TMP=""
+    warn "mark-shot OCR installation failed. Keep the previous environment unchanged."
+    FAILED_PACKAGES+=("uv:mark-shot-ocr")
+  fi
+fi
 
 # --- pi-coding-agent ---
 log "Install pi-coding-agent."
 
-if as_user_shell 'command -v bun >/dev/null 2>&1'; then
-  if as_user_shell 'bun add -g --ignore-scripts @earendil-works/pi-coding-agent'; then
+if [[ -x "$HOME_DIR/.local/bin/pi" ]]; then
+  success "pi-coding-agent is already installed."
+elif as_user_shell 'command -v bun >/dev/null 2>&1'; then
+  if as_user_shell 'bun add -g --ignore-scripts --registry=https://registry.npmmirror.com @earendil-works/pi-coding-agent'; then
     # bun add -g 在 ~/.bun/bin 中创建程序链接。
     # 再链接到 fish PATH 已包含的 ~/.local/bin。
     as_user mkdir -p "$HOME_DIR/.local/bin"
     as_user ln -sf "$HOME_DIR/.bun/bin/pi" "$HOME_DIR/.local/bin/pi" 2>/dev/null || true
     success "pi-coding-agent is installed."
   else
+    as_user_shell 'bun remove -g @earendil-works/pi-coding-agent >/dev/null 2>&1 || true'
     warn "pi-coding-agent installation failed. Check the network connection."
     FAILED_PACKAGES+=("bun:@earendil-works/pi-coding-agent")
   fi
@@ -310,15 +457,22 @@ fi
 log "Install EasyTier (P2P VPN)."
 
 EASYTIER_ARCH="x86_64"
-EASYTIER_API="https://gh-proxy.org/https://api.github.com/repos/EasyTier/EasyTier/releases/latest"
-EASYTIER_TMP="/tmp/easytier_install"
+EASYTIER_API="https://api.github.com/repos/EasyTier/EasyTier/releases/latest"
 EASYTIER_READY=false
 
-rm -rf "$EASYTIER_TMP"
-mkdir -p "$EASYTIER_TMP"
+if [[ -x "$HOME_DIR/.local/bin/easytier-cli" && -x "$HOME_DIR/.local/bin/easytier-core" ]]; then
+  success "EasyTier is already installed."
+  EASYTIER_INSTALLED=true
+else
+  EASYTIER_INSTALLED=false
+  EASYTIER_TMP=$(mktemp -d /tmp/easytier-install.XXXXXX)
+fi
 
+if [ "$EASYTIER_INSTALLED" = false ]; then
 log "Get the latest stable EasyTier release."
-if EASYTIER_RELEASE_JSON=$(curl -fLsS --retry 3 --retry-delay 2 --connect-timeout 15 --max-time 30 "$EASYTIER_API"); then
+EASYTIER_RELEASE_FILE="$EASYTIER_TMP/release.json"
+if "$GITHUB_CURL_WRAPPER" "$EASYTIER_RELEASE_FILE" "$EASYTIER_API"; then
+  EASYTIER_RELEASE_JSON=$(<"$EASYTIER_RELEASE_FILE")
   EASYTIER_TAG=$(jq -r '.tag_name // empty' <<< "$EASYTIER_RELEASE_JSON")
   if [[ "$EASYTIER_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     EASYTIER_VER="${EASYTIER_TAG#v}"
@@ -328,7 +482,7 @@ if EASYTIER_RELEASE_JSON=$(curl -fLsS --retry 3 --retry-delay 2 --connect-timeou
       <<< "$EASYTIER_RELEASE_JSON" | head -n 1)
 
     if [[ "$EASYTIER_ASSET_URL" == https://github.com/EasyTier/EasyTier/releases/download/* ]]; then
-      EASYTIER_URL="https://gh-proxy.org/${EASYTIER_ASSET_URL}"
+      EASYTIER_URL="$EASYTIER_ASSET_URL"
       EASYTIER_READY=true
       info_kv "EasyTier release" "$EASYTIER_TAG"
     else
@@ -338,11 +492,11 @@ if EASYTIER_RELEASE_JSON=$(curl -fLsS --retry 3 --retry-delay 2 --connect-timeou
     warn "GitHub returned an invalid EasyTier release tag: ${EASYTIER_TAG:-<empty>}."
   fi
 else
-  warn "The EasyTier release query through gh-proxy.org failed."
+  warn "The EasyTier release query failed through all GitHub routes."
 fi
 
-if [ "$EASYTIER_READY" = true ] && curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 \
-  -o "$EASYTIER_TMP/$EASYTIER_ZIP" "$EASYTIER_URL"; then
+if [ "$EASYTIER_READY" = true ] && \
+  "$GITHUB_CURL_WRAPPER" "$EASYTIER_TMP/$EASYTIER_ZIP" "$EASYTIER_URL"; then
 
   # 防止代理站返回 HTML/错误页，但 curl 仍保存成 zip 文件。
   if unzip -tq "$EASYTIER_TMP/$EASYTIER_ZIP" >/dev/null 2>&1; then
@@ -364,6 +518,7 @@ if [ "$EASYTIER_READY" = true ] && curl -fL --retry 3 --retry-delay 2 --connect-
         if [[ -x "$HOME_DIR/.local/bin/easytier-cli" && -x "$HOME_DIR/.local/bin/easytier-core" ]]; then
           success "EasyTier v${EASYTIER_VER} is installed."
         else
+          rm -f -- "$HOME_DIR/.local/bin/easytier-cli" "$HOME_DIR/.local/bin/easytier-core"
           warn "The EasyTier command completed, but its executables are not in PATH."
           FAILED_PACKAGES+=("manual:easytier")
         fi
@@ -383,12 +538,14 @@ if [ "$EASYTIER_READY" = true ] && curl -fL --retry 3 --retry-delay 2 --connect-
   fi
 else
   if [ "$EASYTIER_READY" = true ]; then
-    warn "The EasyTier download from the proxy failed: $EASYTIER_URL."
+    warn "The EasyTier download failed through all GitHub routes: $EASYTIER_URL."
   fi
   FAILED_PACKAGES+=("manual:easytier")
 fi
 
-rm -rf "$EASYTIER_TMP"
+rm -rf -- "$EASYTIER_TMP"
+EASYTIER_TMP=""
+fi
 
 # 配置用户桌面。
 section "Post-install" "Configure GTK, the terminal, and Flatpak"

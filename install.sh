@@ -9,9 +9,7 @@ export SHELL=$(command -v bash)
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$BASE_DIR/scripts"
 STATE_FILE="$BASE_DIR/.install_progress"
-GITHUB_PROXY_PREFIX="https://gh-proxy.org/"
 PROXY_RUNTIME_DIR=""
-PROXY_GIT_CONFIG_INDEX=""
 TEMP_SUDO_FILE="/etc/sudoers.d/99-shorin-installer-temp"
 
 # 加载公共函数。
@@ -60,17 +58,8 @@ MODULES=(
 check_root
 chmod +x "$SCRIPTS_DIR"/*.sh "$BASE_DIR/github-wrapper"/*.sh
 
-# 在本次安装中临时加速 GitHub 下载。
-# Git 在用户配置之外读取这些环境变量。
-# 子 Shell、runuser 和 paru 继承这些变量。此配置不修改用户的 Git 配置。
-PROXY_GIT_CONFIG_INDEX="${GIT_CONFIG_COUNT:-0}"
-export GIT_CONFIG_COUNT=$((PROXY_GIT_CONFIG_INDEX + 1))
-export "GIT_CONFIG_KEY_${PROXY_GIT_CONFIG_INDEX}=url.${GITHUB_PROXY_PREFIX}https://github.com/.insteadOf"
-export "GIT_CONFIG_VALUE_${PROXY_GIT_CONFIG_INDEX}=https://github.com/"
-
 # PATH 中的包装脚本使 makepkg 使用临时配置。
-# 包装脚本按 GitHub 域名和请求类型选择下载路径。
-# 内容下载优先使用代理，API 请求优先直连。每条公开路径均有备用路径。
+# GitHub HTTP(S) 和 Git clone 均先直连，再依次回退到两个代理。
 # 签名 URL 和认证 URL 始终直连。脚本不修改持久配置。
 PROXY_RUNTIME_DIR="$(mktemp -d /tmp/shorin-github-proxy.XXXXXX)"
 chmod 0755 "$PROXY_RUNTIME_DIR"
@@ -91,11 +80,16 @@ EOF
 chmod 0644 "$PROXY_RUNTIME_DIR/makepkg.conf"
 cat >"$PROXY_RUNTIME_DIR/bin/makepkg" <<EOF
 #!/usr/bin/env bash
+export PATH="$PROXY_RUNTIME_DIR/bin:\$PATH"
 exec /usr/bin/makepkg --config "$PROXY_RUNTIME_DIR/makepkg.conf" "\$@"
 EOF
 chmod 0755 "$PROXY_RUNTIME_DIR/bin/makepkg"
+cp "$BASE_DIR/github-wrapper/git-github-wrapper.sh" "$PROXY_RUNTIME_DIR/bin/git"
+chmod 0755 "$PROXY_RUNTIME_DIR/bin/git"
 export PATH="$PROXY_RUNTIME_DIR/bin:$PATH"
 export SHORIN_MAKEPKG_WRAPPER="$PROXY_RUNTIME_DIR/bin/makepkg"
+export SHORIN_GITHUB_CURL_WRAPPER="$BASE_DIR/github-wrapper/curl-github-wrapper.sh"
+export SHORIN_GITHUB_GIT_WRAPPER="$BASE_DIR/github-wrapper/git-github-wrapper.sh"
 
 # 标题图案
 banner1() {
@@ -178,101 +172,10 @@ DEV_ENV_PKGS=(nodejs bun uv rust go)
 log "Install development tools."
 exe pacman -S --noconfirm --needed "${DEV_ENV_PKGS[@]}"
 
-# 根据安装状态更新镜像列表。
-section "Preflight" "Update the mirror list"
-
-if grep -q "^REFLECTOR_DONE$" "$STATE_FILE"; then
-    echo -e "   ${H_GREEN}✔${NC} The mirror list is current."
-    echo -e "   ${DIM}   Skip Reflector in resume mode.${NC}"
-else
-    CURRENT_TZ=$(readlink -f /etc/localtime)
-    REFLECTOR_ARGS="--protocol https -a 12 -f 10 --sort rate --save /etc/pacman.d/mirrorlist --verbose"
-    
-    REFLECTOR_SUCCESS=0
-    if [[ "$CURRENT_TZ" == *"Shanghai"* ]]; then
-        echo ""
-        echo -e "${H_YELLOW}╔══════════════════════════════════════════════════════════════════╗${NC}"
-        echo -e "${H_YELLOW}║  Time zone: Asia/Shanghai                                        ║${NC}"
-        echo -e "${H_YELLOW}║  Reflector can be slow in China.                                 ║${NC}"
-        echo -e "${H_YELLOW}║  Update mirrors with Reflector?                                  ║${NC}"
-        echo -e "${H_YELLOW}╚══════════════════════════════════════════════════════════════════╝${NC}"
-        echo ""
-        
-        read -t 60 -p "$(echo -e "   ${H_CYAN}Run Reflector? [y/N]. Default after 60 seconds: N: ${NC}")" choice
-        if [ $? -ne 0 ]; then echo ""; fi
-        choice=${choice:-N}
-        
-        if [[ "$choice" =~ ^[Yy]$ ]]; then
-            log "Check Reflector."
-            if exe pacman -S --noconfirm --needed reflector; then
-                log "Find China mirrors with Reflector."
-                if exe reflector $REFLECTOR_ARGS -c China; then
-                    success "The mirror list is updated."
-                    REFLECTOR_SUCCESS=1
-                else
-                    warn "The China mirror update failed. Try the 30 latest global mirrors."
-                    if exe reflector $REFLECTOR_ARGS --latest 30; then
-                        success "The mirror list is updated."
-                        REFLECTOR_SUCCESS=1
-                    else
-                        warn "Reflector failed. Use the current mirrors."
-                    fi
-                fi
-            else
-                warn "Reflector installation failed. Use the current mirrors."
-            fi
-        else
-            log "Skip the mirror update."
-        fi
-    else
-        echo ""
-        echo -e "${H_CYAN}The time zone is outside China. A Reflector update is recommended.${NC}"
-        read -t 60 -p "$(echo -e "   ${H_CYAN}Run Reflector? [Y/n]. Default after 60 seconds: Y: ${NC}")" choice
-        if [ $? -ne 0 ]; then echo ""; fi
-        choice=${choice:-Y}
-        
-        if [[ ! "$choice" =~ ^[Nn]$ ]]; then
-            log "Check Reflector."
-            if exe pacman -S --noconfirm --needed reflector; then
-                log "Detect the country."
-                COUNTRY_CODE=$(curl -s --max-time 2 https://ipinfo.io/country)
-                
-                if [ -n "$COUNTRY_CODE" ]; then
-                    info_kv "Country" "$COUNTRY_CODE" "(detected)"
-                    log "Find mirrors for $COUNTRY_CODE with Reflector."
-                    if exe reflector $REFLECTOR_ARGS -c "$COUNTRY_CODE"; then
-                        success "The mirror list is updated."
-                        REFLECTOR_SUCCESS=1
-                    else
-                        warn "The local mirror update failed. Try the 30 latest global mirrors."
-                        if exe reflector $REFLECTOR_ARGS --latest 30; then
-                            success "The mirror list is updated."
-                            REFLECTOR_SUCCESS=1
-                        else
-                            warn "Reflector failed. Use the current mirrors."
-                        fi
-                    fi
-                else
-                    warn "Country detection failed. Try the 30 latest global mirrors."
-                    if exe reflector $REFLECTOR_ARGS --latest 30; then
-                        success "The mirror list is updated."
-                        REFLECTOR_SUCCESS=1
-                    else
-                        warn "Reflector failed. Use the current mirrors."
-                    fi
-                fi
-            else
-                warn "Reflector installation failed. Use the current mirrors."
-            fi
-        else
-            log "Skip the mirror update."
-        fi
-    fi
-    
-    if [ "$REFLECTOR_SUCCESS" -eq 1 ]; then
-        echo "REFLECTOR_DONE" >> "$STATE_FILE"
-    fi
-fi
+# README 中的 Arch 基础安装阶段已经为中国网络配置镜像。
+# 主安装程序不再重复询问或运行 Reflector，避免增加等待和下载时间。
+section "Preflight" "Use the existing China mirror configuration"
+log "Assume the installation is running in China. Keep the current pacman mirror list."
 
 # 更新密钥环。
 section "Preflight" "Update the keyring"

@@ -26,11 +26,11 @@ export BG_BLUE='\033[44m'
 export BG_PURPLE='\033[45m'
 
 # 状态符号
-export TICK="${H_GREEN}✔${NC}"
-export CROSS="${H_RED}✘${NC}"
-export INFO="${H_BLUE}ℹ${NC}"
-export WARN="${H_YELLOW}⚠${NC}"
-export ARROW="${H_CYAN}➜${NC}"
+export TICK="${H_GREEN}[OK]${NC}"
+export CROSS="${H_RED}[FAIL]${NC}"
+export INFO="${H_BLUE}[INFO]${NC}"
+export WARN="${H_YELLOW}[WARN]${NC}"
+export ARROW="${H_CYAN}->${NC}"
 
 
 check_root() {
@@ -136,8 +136,12 @@ detect_target_user() {
     # 如果没有目标用户，则读取新用户名。
     if [[ -z "$TARGET_USER" ]]; then
         while true; do
-            echo -ne "   ${H_GREEN}Enter the new user name: ${NC}"
-            read -r NEW_USER
+            echo -ne "   ${H_GREEN}Enter the new user name. Timeout: 30 seconds: ${NC}"
+            if ! read -r -t 30 NEW_USER; then
+                echo
+                error "User name input timed out after 30 seconds."
+                return 1
+            fi
             
             # 用户名只能包含小写字母、数字、连字符和下划线。
             if [[ "$NEW_USER" =~ ^[a-z_][a-z0-9_-]*$ ]]; then

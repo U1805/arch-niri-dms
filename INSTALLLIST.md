@@ -37,7 +37,7 @@
 | 8 | `06-config.sh` | 部署配置和壁纸，验证桌面状态 |
 | 9 | `07a-grub-theme.sh` | 同步、选择并应用 GRUB 主题 |
 | 10 | `07b-grub-config.sh` | 配置 GRUB UKI、参数和菜单，并验证候选配置 |
-| 11 | `99a-apps.sh` | 安装固定的 Pacman、AUR 和 Flatpak 应用 |
+| 11 | `99a-apps.sh` | 安装官方仓库应用，生成延后用户应用安装脚本 |
 | 12 | `99b-apps.sh` | 安装条件软件包和外部资源，应用安装后设置 |
 | 13 | `install.sh` 清理 | 清理缓存并保存日志 |
 
@@ -49,7 +49,7 @@
 | 0.0 | 全部已安装包 | 当前软件仓库 | 同步软件包数据库并更新系统 | 不单独运行 `pacman -Sy`，避免部分更新 |
 | 0.1 | `bash`, `curl`, `wget`, `tar`, `unzip`, `git`, `jq`, `vim` | 官方 | 提供基础工具 | 将全局 `EDITOR` 设置为 `vim` |
 | 0.2 | `nodejs`, `bun`, `uv`, `rust`, `go` | 官方 | 提供软件包工具和开发环境 | 使用 `pacman -S --needed` 安装 |
-| 0.3 | `reflector` | 官方 | 更新 Arch 镜像列表 | 用户确认后执行。上海时区默认跳过，其他时区默认执行 |
+| 0.3 | 当前 Pacman 镜像列表 | README 基础安装配置 | 使用中国网络环境下已经配置的镜像 | 不再询问或运行 Reflector，避免重复测速和额外等待 |
 | 0.4 | `archlinux-keyring` | 官方 | 更新 Arch 签名密钥 | 在系统更新后使用 `pacman -S --needed` 安装 |
 | 0.5 | `[multilib]` | Arch 官方仓库配置 | 提供 32 位库 | 仅修改 `/etc/pacman.conf`。已启用时跳过 |
 | 0.6 | 全部已安装包 | 当前软件仓库 | 运行 `pacman -Syu` | 更新所有已配置仓库中的软件包 |
@@ -111,7 +111,7 @@
 | 5.4 | `libnotify`, `wl-clipboard`, `cliphist` | 官方 `extra` | 提供 DMS 通知和剪贴板功能 | DMS 使用这些软件包，但上游元数据未声明依赖关系 |
 | 5.5 | `cava`, `cups-pk-helper`, `matugen`, `qt6-multimedia`, `qt6ct`, `wtype`, `swayosd` | 官方 `extra` | 提供音频显示、打印、主题、音效、Qt6 和按键提示 | 安装后启用并启动 `swayosd-libinput-backend.service` |
 | 5.6 | `dsearch-bin` | AUR | 提供 DMS 文件索引搜索 | 官方仓库没有此软件包。paru 单独安装。配置启动 `dsearch serve` |
-| 5.7 | `greetd-dms-greeter-git` | AUR | 提供独立的 `dms-greeter` 登录界面和管理命令 | 使用 paru 显式安装；其 `greetd` 依赖由 Pacman 从官方 `extra` 解析。随后运行 `dms-greeter install`、`sync` 和 `status`，不通过已弃用的 `dms greeter` 兼容入口隐式安装 |
+| 5.7 | `greetd-dms-greeter-bin` | AUR | 提供 `dms-greeter` 启动器和 Greeter QML 文件 | 其依赖来自官方 `extra`。随后运行 `dms greeter enable`、`sync`、`status` |
 
 当前 Portal 与文件管理器的依赖链如下：
 
@@ -162,7 +162,10 @@ pacman 安装这些软件包。
 
 ## 5. 固定应用与安装后工具
 
-`99a-apps.sh` 安装 `common-applist.txt` 中的全部有效条目。
+`99a-apps.sh` 只安装 `common-applist.txt` 中的 Arch 官方仓库条目，并在目标用户家目录生成
+`~/install_common_applist.sh`。AUR/ArchLinuxCN 和 Flatpak 条目不会阻塞系统安装；用户第一次
+登录桌面后，以普通用户身份手动运行该脚本。延后脚本批量执行一次 Paru 事务，并将 Flatpak
+应用安装到用户级（`--user`）；脚本可以重复执行，已安装项目会跳过。
 `99b-apps.sh` 随后处理条件依赖项、外部资源和用户设置。
 
 ### 5.1 Pacman
@@ -212,13 +215,13 @@ pacman 安装这些软件包。
 | 顺序 | 包/资源 | 来源 | 作用 | 触发条件 |
 |---:|---|---|---|---|
 | 8.28 | `qemu-full`, `swtpm`, `dnsmasq`, `virt-viewer`（以及 `virt-manager`） | 官方 | 提供 KVM、TPM、NAT 和虚拟机查看器 | 仅在物理机上配置。启用 libvirtd。将用户加入相关组 |
-| 8.29 | `wine-gecko`, `wine-mono` | 官方/multilib | Wine 浏览器和 .NET 兼容 | Wine 安装后固定执行 |
-| 8.30 | `simfang.ttf`, `simhei.ttf`, `simkai.ttf`, `simsun.ttc` | 外部：SHORiN-KiWATA GitHub | 提供 Wine 中文字体 | 安装 Wine 后下载到 Wine 前缀 |
-| 8.31 | U1805/rime 仓库 | 外部：GitHub，经代理 | 提供 Rime 方案、词典、Lua 和 OpenCC 配置 | 浅克隆指定版本。部署前删除 `.git` |
+| 8.29 | `wine-gecko`, `wine-mono`, 临时 `xorg-server-xvfb` | 官方/multilib | Wine 浏览器、.NET 兼容及无桌面环境下的虚拟 X11 显示 | Wine Prefix 未初始化时，在 Xvfb 中运行 `wineboot`；只卸载本次事务新增的 Xvfb 及依赖，失败或中断同样清理 |
+| 8.30 | `simfang.ttf`, `simhei.ttf`, `simkai.ttf`, `simsun.ttc` | 外部：SHORiN-KiWATA GitHub | 提供 Wine 中文字体 | 安装 Wine 后逐个下载获取，失败时清理 `.part` 文件 |
+| 8.31 | U1805/rime 仓库 | 外部：GitHub | 提供 Rime 方案、词典、Lua 和 OpenCC 配置 | 完整部署成功后写入标记 |
 | 8.32 | `wanxiang-lts-zh-hans.gram` | 外部：万象官方 CNB 加速下载 | U1805/rime 所需万象语法模型 | 不打包进仓库，安装时单独下载 |
-| 8.33 | `rapidocr`, `onnxruntime` | 外部：PyPI，经 `uv pip` | 提供 mark-shot OCR | 始终尝试安装，不依赖 mark-shot 的安装结果 |
-| 8.34 | `@earendil-works/pi-coding-agent` | 外部：npm 和 Bun registry | 提供 AI 编程助手 | 仅当 bun 存在时安装。使用 `--ignore-scripts` |
-| 8.35 | EasyTier 最新稳定版 x86_64 ZIP | 外部：GitHub Release | 提供 P2P VPN | 安装到 `~/.local/bin`。仅验证 ZIP，不验证签名或哈希 |
+| 8.33 | `rapidocr`, `onnxruntime` | 外部：PyPI，经清华 PyPI 镜像和 `uv pip` | 提供 mark-shot OCR | 先验证已有虚拟环境，缺失时在临时环境安装并验证，成功后替换，失败时保留旧环境 |
+| 8.34 | `@earendil-works/pi-coding-agent` | 外部：npm，经 npmmirror 和 Bun | 提供 AI 编程助手 | 仅当 bun 存在时安装 |
+| 8.35 | EasyTier 最新稳定版 x86_64 ZIP | 外部：GitHub Release | 提供 P2P VPN | 两个命令已存在时跳过；仅验证 ZIP，不验证签名或哈希 |
 | 8.36 | GTK、终端、Flatpak 和应用菜单设置 | 本地操作 | 配置深色主题、默认终端、Flatpak 权限和应用菜单 | 安装应用后执行。隐藏辅助程序入口。保留 Fcitx 和 Thunar 主入口 |
 | 8.37 | `keyd.service` 和 keyd 配置 | 本地操作 | 启用 keyd 并重新加载按键映射 | 仅当 keyd 已安装时执行。失败时写入报告 |
 

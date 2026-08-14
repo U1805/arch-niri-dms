@@ -6,9 +6,17 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(dirname "$SCRIPT_DIR")"
+GITHUB_GIT_WRAPPER="${SHORIN_GITHUB_GIT_WRAPPER:-$PARENT_DIR/github-wrapper/git-github-wrapper.sh}"
 source "$SCRIPT_DIR/00-utils.sh"
 
 check_root
+
+TEMP_MG_DIR=""
+cleanup_minegrub_source() {
+    [[ -z "$TEMP_MG_DIR" ]] || rm -rf -- "$TEMP_MG_DIR"
+}
+trap cleanup_minegrub_source EXIT
+trap 'exit 130' INT TERM
 
 # ------------------------------------------------------------------------------
 # 检查 GRUB。
@@ -133,7 +141,7 @@ SKIP_OPTION_NAME="No theme (skip or clear)"
 MINEGRUB_IDX=$((${#THEME_NAMES[@]} + 1))
 SKIP_IDX=$((${#THEME_NAMES[@]} + 2))
 
-TITLE_TEXT="Select GRUB Theme (60s Timeout)"
+TITLE_TEXT="Select GRUB Theme (30s Timeout)"
 LINE_STR="───────────────────────────────────────────────────────"
 
 echo -e "\n${H_PURPLE}╭${LINE_STR}${NC}"
@@ -161,8 +169,8 @@ echo -e "${H_PURPLE}│${NC} ${SKIP_COLOR_STR}"
 
 echo -e "${H_PURPLE}╰${LINE_STR}${NC}\n"
 
-echo -ne "   ${H_YELLOW}Select an option [1-$SKIP_IDX]: ${NC}"
-read -t 60 USER_CHOICE || true
+echo -ne "   ${H_YELLOW}Select an option [1-$SKIP_IDX]. Default: 1. Timeout: 30 seconds: ${NC}"
+read -r -t 30 USER_CHOICE || true
 if [ -z "${USER_CHOICE:-}" ]; then echo ""; fi
 USER_CHOICE=${USER_CHOICE:-1}
 
@@ -217,7 +225,8 @@ if [ "$SKIP_THEME" == "true" ]; then
     else
         TEMP_MG_DIR=$(mktemp -d -t minegrub_install_XXXXXX)
         log "Clone Lxtharia/double-minegrub-menu."
-        if exe git clone --depth 1 "https://github.com/Lxtharia/double-minegrub-menu.git" "$TEMP_MG_DIR"; then
+        if exe "$GITHUB_GIT_WRAPPER" clone --depth 1 \
+            "https://github.com/Lxtharia/double-minegrub-menu.git" "$TEMP_MG_DIR"; then
             if [ -f "$TEMP_MG_DIR/install.sh" ]; then
                 log "Run the Minegrub install.sh script."
                 (
@@ -236,7 +245,8 @@ if [ "$SKIP_THEME" == "true" ]; then
         else
             error "The Minegrub repository clone failed."
         fi
-        [ -n "$TEMP_MG_DIR" ] && rm -rf "$TEMP_MG_DIR"
+        rm -rf -- "$TEMP_MG_DIR"
+        TEMP_MG_DIR=""
     fi
     
 else

@@ -83,6 +83,13 @@ source "$SCRIPT_DIR/00-utils.sh"
 check_root
 detect_target_user
 
+WALLPAPER_PART=""
+cleanup_wallpaper_download() {
+  [[ -z "$WALLPAPER_PART" ]] || rm -f -- "$WALLPAPER_PART"
+}
+trap cleanup_wallpaper_download EXIT
+trap 'exit 130' INT TERM
+
 if [[ -z "$TARGET_USER" || ! -d "$HOME_DIR" ]]; then
   error "The target user is not valid, or the home directory does not exist."
   exit 1
@@ -125,11 +132,11 @@ fi
 
 log "Download wallpapers."
 WALLPAPER_DIR="$HOME_DIR/Pictures/Wallpapers"
-WALLPAPER_URLS=()
+WALLPAPER_ENTRIES=()
 if [[ -f "$PARENT_DIR/wallpapers.txt" ]]; then
-  while IFS= read -r url; do
-    [[ -z "$url" || "$url" == \#* ]] && continue
-    WALLPAPER_URLS+=("$url")
+  while IFS= read -r entry; do
+    [[ -z "$entry" || "$entry" == \#* ]] && continue
+    WALLPAPER_ENTRIES+=("$entry")
   done <"$PARENT_DIR/wallpapers.txt"
 else
   warn "wallpapers.txt is not available. Skip wallpaper downloads."
@@ -137,11 +144,35 @@ fi
 
 install -d "$WALLPAPER_DIR"
 chown "$TARGET_USER:" "$WALLPAPER_DIR"
-for url in "${WALLPAPER_URLS[@]}"; do
-  filename="${url##*/}"
-  if curl -fsSL --retry 3 -o "$WALLPAPER_DIR/$filename" "$url"; then
+for entry in "${WALLPAPER_ENTRIES[@]}"; do
+  if [[ "$entry" == *"|"* ]]; then
+    url="${entry%%|*}"
+    filename="${entry#*|}"
+  else
+    url="$entry"
+    filename="${url##*/}"
+  fi
+  if [[ -z "$filename" || "$filename" == */* ]]; then
+    warn "The wallpaper entry has an invalid target file name: $entry."
+    continue
+  fi
+  wallpaper_target="$WALLPAPER_DIR/$filename"
+  wallpaper_part="$wallpaper_target.part"
+  if [[ -s "$wallpaper_target" ]]; then
+    log "$filename is already downloaded."
+    continue
+  fi
+  WALLPAPER_PART="$wallpaper_part"
+  rm -f -- "$wallpaper_part"
+  if curl --fail --location --show-error --progress-bar \
+      --retry 3 --retry-delay 2 --connect-timeout 15 \
+      -o "$wallpaper_part" "$url"; then
+    mv -f -- "$wallpaper_part" "$wallpaper_target"
+    WALLPAPER_PART=""
     chown "$TARGET_USER:" "$WALLPAPER_DIR/$filename"
   else
+    rm -f -- "$wallpaper_part"
+    WALLPAPER_PART=""
     warn "The download failed: $url."
   fi
 done

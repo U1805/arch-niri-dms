@@ -84,6 +84,9 @@ if [[ -x "${SHORIN_MAKEPKG_WRAPPER:-}" ]]; then
   PARU_MAKEPKG_ARGS+=(--makepkg "$SHORIN_MAKEPKG_WRAPPER")
 fi
 if ! as_user paru "${PARU_MAKEPKG_ARGS[@]}" -S --noconfirm --needed "${ADDITIONAL_DEPS[@]}"; then
+  for package in "${ADDITIONAL_DEPS[@]}"; do
+    rm -rf -- "$HOME_DIR/.cache/paru/clone/$package" "$HOME_DIR/.cache/paru/aur/$package"
+  done
   critical_failure_handler "The additional Shorin DMS dependencies failed to install."
 fi
 
@@ -92,24 +95,34 @@ fi
 # ==============================================================================
 section "Shorin DMS" "Install and configure DMS Greeter"
 
-GREETER_PACKAGE="greetd-dms-greeter-git"
-log "Install DMS Greeter from AUR with paru."
+GREETER_PACKAGE="greetd-dms-greeter-bin"
+log "Install the fixed-release DMS Greeter binary package from AUR with paru."
 if ! as_user paru "${PARU_MAKEPKG_ARGS[@]}" -S --noconfirm --needed "$GREETER_PACKAGE"; then
+  rm -rf -- "$HOME_DIR/.cache/paru/clone/$GREETER_PACKAGE" "$HOME_DIR/.cache/paru/aur/$GREETER_PACKAGE"
   critical_failure_handler "The DMS Greeter AUR package failed to install."
 fi
 printf "%s\n" "$GREETER_PACKAGE" >>"$VERIFY_LIST"
 
-# DMS Greeter 已迁移为独立程序。不要通过旧的 `dms greeter install`
-# 隐式安装 AUR 包；旧版 dms 会用已经废弃的 QML 目录判断安装状态。
+# AUR 二进制包提供 dms-greeter 启动器和 QML 文件；官方 dms-shell 提供管理命令。
+# 软件包已经由 paru 安装，因此不要再运行 `dms greeter install` 触发发行版安装检测。
 if ! command -v dms-greeter >/dev/null 2>&1; then
   critical_failure_handler "The dms-greeter command is missing after package installation."
 fi
+if [[ ! -d /usr/share/quickshell/dms-greeter ]]; then
+  critical_failure_handler "The packaged DMS Greeter QML directory is missing."
+fi
+if ! command -v dms >/dev/null 2>&1; then
+  critical_failure_handler "The dms management command is missing."
+fi
 
-log "Configure and synchronize DMS Greeter."
-if ! as_user dms-greeter install --yes || \
-   ! as_user dms-greeter sync --yes || \
-   ! as_user dms-greeter status; then
-  critical_failure_handler "DMS Greeter installation or verification failed"
+log "Enable, synchronize, and verify DMS Greeter."
+if ! as_user env HOME="$HOME_DIR" USER="$TARGET_USER" LOGNAME="$TARGET_USER" \
+     dms greeter enable --yes || \
+   ! as_user env HOME="$HOME_DIR" USER="$TARGET_USER" LOGNAME="$TARGET_USER" \
+     dms greeter sync --yes || \
+   ! as_user env HOME="$HOME_DIR" USER="$TARGET_USER" LOGNAME="$TARGET_USER" \
+     dms greeter status; then
+  critical_failure_handler "DMS Greeter enable, synchronization, or verification failed."
 fi
 
 success "The Shorin DMS Niri core is installed."

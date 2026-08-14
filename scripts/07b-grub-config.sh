@@ -71,6 +71,24 @@ exe cp -a /etc/grub.d "$GRUB_BACKUP_DIR/grub.d"
 exe cp -a /etc/default/grub "$GRUB_BACKUP_DIR/grub.default"
 [ ! -f /boot/grub/grub.cfg ] || exe cp -a /boot/grub/grub.cfg "$GRUB_BACKUP_DIR/grub.cfg"
 
+GRUB_CANDIDATE=""
+GRUB_NEW_CONFIG="/boot/grub/grub.cfg.arch-niri-dms-new"
+GRUB_COMMITTED=false
+restore_grub_state() {
+    rm -f /etc/grub.d/09_arch_niri_dms_uki /etc/grub.d/30_uefi_firmware_icon /etc/grub.d/31_arch_advanced
+    cp -a "$GRUB_BACKUP_DIR/grub.d/." /etc/grub.d/
+    cp -a "$GRUB_BACKUP_DIR/grub.default" /etc/default/grub
+}
+cleanup_grub_attempt() {
+    [[ -z "$GRUB_CANDIDATE" ]] || rm -f -- "$GRUB_CANDIDATE"
+    if [[ "$GRUB_COMMITTED" != true ]]; then
+        rm -f -- "$GRUB_NEW_CONFIG"
+        restore_grub_state
+    fi
+}
+trap cleanup_grub_attempt EXIT
+trap 'exit 130' INT TERM
+
 section "Step 2/3" "Configure generators, parameters, and menu entries"
 
 set_grub_value "GRUB_DEFAULT" "saved"
@@ -99,11 +117,6 @@ echo 'menuentry "Shutdown" --class shutdown {halt}' >> /etc/grub.d/99_custom
 section "Step 3/3" "Generate and validate a candidate configuration"
 
 GRUB_CANDIDATE=$(mktemp /tmp/arch-niri-dms-grub.XXXXXX.cfg)
-restore_grub_state() {
-    rm -f /etc/grub.d/09_arch_niri_dms_uki /etc/grub.d/30_uefi_firmware_icon /etc/grub.d/31_arch_advanced
-    cp -a "$GRUB_BACKUP_DIR/grub.d/." /etc/grub.d/
-    cp -a "$GRUB_BACKUP_DIR/grub.default" /etc/default/grub
-}
 [ -w /efi/grub ] || exe mount -o remount,rw /efi
 if ! grub-mkconfig -o "$GRUB_CANDIDATE"; then
     restore_grub_state; rm -f "$GRUB_CANDIDATE"; exit 1
@@ -157,13 +170,14 @@ if [ "$validation_failed" = true ]; then
     error "The candidate GRUB configuration failed validation."
     restore_grub_state; rm -f "$GRUB_CANDIDATE"; exit 1
 fi
-GRUB_NEW_CONFIG=/boot/grub/grub.cfg.arch-niri-dms-new
 exe install -m 0600 "$GRUB_CANDIDATE" "$GRUB_NEW_CONFIG"
 rm -f "$GRUB_CANDIDATE"
+GRUB_CANDIDATE=""
 if ! grub-script-check "$GRUB_NEW_CONFIG"; then
     rm -f "$GRUB_NEW_CONFIG"; restore_grub_state; exit 1
 fi
 exe mv -f "$GRUB_NEW_CONFIG" /boot/grub/grub.cfg
+GRUB_COMMITTED=true
 success "The validated GRUB configuration is installed."
 info_kv "GRUB backup" "$GRUB_BACKUP_DIR" ""
 log "Module 07b is complete."
