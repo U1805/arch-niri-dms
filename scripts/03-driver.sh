@@ -136,17 +136,41 @@ fi
 section "Step 7/7" "Configure Flatpak"
 
 exe pacman -S --noconfirm --needed flatpak
-exe flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 CURRENT_TZ=$(readlink -f /etc/localtime)
 if [[ "$CURRENT_TZ" == *"Shanghai"* ]] || [ "$CN_MIRROR" == "1" ] || [ "$DEBUG" == "1" ]; then
     info_kv "Flathub source" "SJTU mirror"
-    log "Set the Flathub source to the SJTU mirror."
-    exe flatpak remote-modify flathub --url="https://mirror.sjtu.edu.cn/flathub"
+    log "Import the Flathub signing key and configure the SJTU mirror."
+    FLATHUB_GPG=$(mktemp /tmp/flathub-gpg.XXXXXX)
+    trap 'rm -f -- "${FLATHUB_GPG:-}"' EXIT
+    if ! curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 \
+        -o "$FLATHUB_GPG" https://mirror.sjtu.edu.cn/flathub/flathub.gpg; then
+        rm -f -- "$FLATHUB_GPG"
+        error "The Flathub signing key could not be downloaded from the SJTU mirror."
+        exit 1
+    fi
+    if flatpak remotes --system --columns=name 2>/dev/null | grep -Fxq flathub; then
+        exe flatpak remote-modify --system --gpg-verify \
+            --gpg-import="$FLATHUB_GPG" \
+            --url="https://mirror.sjtu.edu.cn/flathub" flathub
+    else
+        exe flatpak remote-add --system --no-follow_redirect \
+            --gpg-import="$FLATHUB_GPG" \
+            flathub https://mirror.sjtu.edu.cn/flathub
+    fi
+    # The mirrored summary advertises the canonical Flathub URL.  Pin the
+    # remote back to SJTU after creation and ignore later summary redirects.
+    exe flatpak remote-modify --system --gpg-verify --no-follow-redirect \
+        --gpg-import="$FLATHUB_GPG" \
+        --url="https://mirror.sjtu.edu.cn/flathub" flathub
+    rm -f -- "$FLATHUB_GPG"
+    FLATHUB_GPG=""
+    trap - EXIT
 else
     info_kv "Flathub source" "Official source"
-    log "Use the official Flathub source."
-    exe flatpak remote-modify flathub --url="https://dl.flathub.org/repo/"
+    log "Configure the official Flathub source and signing key."
+    exe flatpak remote-delete --system --force flathub 2>/dev/null || true
+    exe flatpak remote-add --system flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 fi
 
 log "Module 03 is complete."

@@ -30,6 +30,16 @@ backup_and_copy_dotfiles() {
   # 不部署仓库中与设备相关的链接和临时链接。
   done < <(cd "$template_dir" && find . -type f -print0)
 
+  # The repository profile contains proxy defaults for an already configured
+  # desktop.  A newly installed system does not have that proxy yet; enabling
+  # these variables on its first login would also prevent the proxy client
+  # itself from being downloaded.  Keep the settings visible, but disabled.
+  if [[ -f "$HOME/.bash_profile" ]]; then
+    sed -Ei \
+      '/^[[:space:]]*export[[:space:]]+(http_proxy|https_proxy|HTTP_PROXY|HTTPS_PROXY|all_proxy|ALL_PROXY|no_proxy|NO_PROXY)=/ s/^/# disabled during installation: /' \
+      "$HOME/.bash_profile"
+  fi
+
   echo "The current user configuration is backed up to $backup_dir."
 }
 

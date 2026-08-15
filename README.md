@@ -60,28 +60,14 @@ NTP service: active
 
 ------
 
-## 3. 换镜像源
-
-安装前先更新镜像列表：
-
-```bash
-reflector -a 12 -c cn -f 10 --sort rate --v --save /etc/pacman.d/mirrorlist
-pacman -Syy
-```
-
-这里的策略是：
-中国区，最近 12 小时，取前 10 个，按速度排序。
-
----
-
-## 4. 清空分区
+## [3. 清空分区]
 
 ```
 cfdisk /dev/nvme0n1
 # 删除旧的分区
 ```
 
-## 5. 安装 arch
+## 4. 安装 arch
 
 ```
 archinstall
@@ -108,7 +94,7 @@ ln -s /efi/grub /boot/grub
 
 ------
 
-## 6. 第一次重启
+## 5. 第一次重启
 
 ```bash
 reboot

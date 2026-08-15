@@ -37,7 +37,7 @@
 | 8 | `06-config.sh` | 部署配置和壁纸，验证桌面状态 |
 | 9 | `07a-grub-theme.sh` | 同步、选择并应用 GRUB 主题 |
 | 10 | `07b-grub-config.sh` | 配置 GRUB UKI、参数和菜单，并验证候选配置 |
-| 11 | `99a-apps.sh` | 安装官方仓库应用，生成延后用户应用安装脚本 |
+| 11 | `99a-apps.sh` | 安装官方仓库、AUR/ArchLinuxCN 和 Flatpak 应用 |
 | 12 | `99b-apps.sh` | 安装条件软件包和外部资源，应用安装后设置 |
 | 13 | `install.sh` 清理 | 清理缓存并保存日志 |
 
@@ -161,10 +161,8 @@ pacman 安装这些软件包。
 
 ## 5. 固定应用与安装后工具
 
-`99a-apps.sh` 只安装 `common-applist.txt` 中的 Arch 官方仓库条目，并在目标用户家目录生成
-`~/install_common_applist.sh`。AUR/ArchLinuxCN 和 Flatpak 条目不会阻塞系统安装；用户第一次
-登录桌面后，以普通用户身份手动运行该脚本。延后脚本批量执行一次 Paru 事务，并将 Flatpak
-应用安装到用户级（`--user`）；脚本可以重复执行，已安装项目会跳过。
+`99a-apps.sh` 在主安装阶段处理 `common-applist.txt` 的全部条目：官方仓库包使用 Pacman，
+AUR/ArchLinuxCN 条目由目标用户通过 Paru 批量安装，Flatpak 应用安装到系统级 Flathub。
 `99b-apps.sh` 随后处理条件依赖项、外部资源和用户设置。
 
 ### 5.1 Pacman
@@ -222,7 +220,7 @@ pacman 安装这些软件包。
 | 8.34 | `@earendil-works/pi-coding-agent` | 外部：npm，经 npmmirror 和 Bun | 提供 AI 编程助手 | 仅当 bun 存在时安装 |
 | 8.35 | EasyTier 最新稳定版 x86_64 ZIP | 外部：GitHub Release | 提供 P2P VPN | 两个命令已存在时跳过；仅验证 ZIP，不验证签名或哈希 |
 | 8.36 | GTK、终端、Flatpak 和应用菜单设置 | 本地操作 | 配置深色主题、默认终端、Flatpak 权限和应用菜单 | 安装应用后执行。隐藏辅助程序入口。保留 Fcitx 和 Thunar 主入口 |
-| 8.37 | `keyd.service` 和 keyd 配置 | 本地操作 | 启用 keyd 并重新加载按键映射 | 仅当 keyd 已安装时执行。失败时写入报告 |
+| 8.37 | `keyd.service` 和 keyd 配置 | 本地操作 | 启用 keyd 并重新加载按键映射 | 仅当 keyd 已安装时执行；启动后短暂重试 reload，避免服务套接字初始化竞态；失败时写入报告 |
 
 ## 6. 无法预先列出的安装项
 

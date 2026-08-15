@@ -116,11 +116,11 @@ if ! command -v dms >/dev/null 2>&1; then
 fi
 
 log "Enable, synchronize, and verify DMS Greeter."
-if ! as_user env HOME="$HOME_DIR" USER="$TARGET_USER" LOGNAME="$TARGET_USER" \
+if ! as_user env HOME="$HOME_DIR" USER="$TARGET_USER" LOGNAME="$TARGET_USER" DMS_PRIVESC=sudo \
      dms greeter enable --yes || \
-   ! as_user env HOME="$HOME_DIR" USER="$TARGET_USER" LOGNAME="$TARGET_USER" \
+   ! as_user env HOME="$HOME_DIR" USER="$TARGET_USER" LOGNAME="$TARGET_USER" DMS_PRIVESC=sudo \
      dms greeter sync --yes || \
-   ! as_user env HOME="$HOME_DIR" USER="$TARGET_USER" LOGNAME="$TARGET_USER" \
+   ! as_user env HOME="$HOME_DIR" USER="$TARGET_USER" LOGNAME="$TARGET_USER" DMS_PRIVESC=sudo \
      dms greeter status; then
   critical_failure_handler "DMS Greeter enable, synchronization, or verification failed."
 fi

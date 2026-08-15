@@ -53,7 +53,6 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(dirname "$SCRIPT_DIR")"
 GITHUB_CURL_WRAPPER="${SHORIN_GITHUB_CURL_WRAPPER:-$PARENT_DIR/github-wrapper/curl-github-wrapper.sh}"
-GITHUB_GIT_WRAPPER="${SHORIN_GITHUB_GIT_WRAPPER:-$PARENT_DIR/github-wrapper/git-github-wrapper.sh}"
 
 if [[ -f "$SCRIPT_DIR/00-utils.sh" ]]; then
   source "$SCRIPT_DIR/00-utils.sh"
@@ -76,6 +75,9 @@ if [[ -z "$TARGET_USER" || ! -d "$HOME_DIR" ]]; then
   exit 1
 fi
 info_kv "Target user" "$TARGET_USER"
+
+DOCS_DIR="$HOME_DIR/Documents"
+REPORT_FILE="$DOCS_DIR/post-install-failures.txt"
 
 RIME_CLONE=""
 EASYTIER_TMP=""
@@ -255,7 +257,7 @@ if command -v wine &>/dev/null; then
 
       pacman -Qq | LC_ALL=C sort >"$XVFB_STATE_DIR/packages.after"
       mapfile -t XVFB_TEMP_PACKAGES < <(
-        comm -13 "$XVFB_STATE_DIR/packages.before" "$XVFB_STATE_DIR/packages.after"
+        LC_ALL=C comm -13 "$XVFB_STATE_DIR/packages.before" "$XVFB_STATE_DIR/packages.after"
       )
     fi
 
@@ -353,7 +355,7 @@ fi
 section "Post-install" "Configure the Rime schema"
 
 RIME_DIR="$HOME_DIR/.local/share/fcitx5/rime"
-RIME_REPO="https://github.com/U1805/rime.git"
+RIME_ARCHIVE_URL="https://github.com/U1805/rime/archive/refs/heads/main.tar.gz"
 WANXIANG_URL="https://cnb.cool/amzxyz/rime-wanxiang/-/releases/download/model/wanxiang-lts-zh-hans.gram"
 RIME_MARKER="$RIME_DIR/.arch-niri-dms-installed"
 
@@ -361,10 +363,11 @@ if [[ -f "$RIME_MARKER" && -s "$RIME_DIR/wanxiang-lts-zh-hans.gram" ]]; then
   success "The U1805/rime schema and grammar model are already installed."
 else
   RIME_CLONE=$(mktemp -d "/tmp/rime-schema-$TARGET_USER.XXXXXX")
-  log "Clone the U1805/rime schema from $RIME_REPO."
+  log "Download the U1805/rime schema archive with resumable GitHub routing."
 
-  if "$GITHUB_GIT_WRAPPER" clone --depth 1 --filter=blob:none \
-      "$RIME_REPO" "$RIME_CLONE/source"; then
+  if "$GITHUB_CURL_WRAPPER" "$RIME_CLONE/rime.tar.gz" "$RIME_ARCHIVE_URL" && \
+      mkdir -p "$RIME_CLONE/source" && \
+      tar -xzf "$RIME_CLONE/rime.tar.gz" --strip-components=1 -C "$RIME_CLONE/source"; then
     if curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 \
       -o "$RIME_CLONE/wanxiang-lts-zh-hans.gram.part" "$WANXIANG_URL"; then
       mv "$RIME_CLONE/wanxiang-lts-zh-hans.gram.part" \
@@ -392,12 +395,30 @@ else
       success "The U1805/rime schema is deployed."
     fi
   else
-    warn "The U1805/rime clone failed. Keep the current Rime directory unchanged."
+    warn "The U1805/rime archive download or extraction failed. Keep the current Rime directory unchanged."
+    FAILED_PACKAGES+=("manual:u1805-rime")
   fi
 fi
 
 [[ -z "$RIME_CLONE" ]] || rm -rf -- "$RIME_CLONE"
 RIME_CLONE=""
+
+# Do not override the upstream schema, key bindings, Caps Lock behavior or
+# candidate count.  Rebuild so Fcitx5 cannot keep using stale compiled data.
+if [[ -d "$RIME_DIR" ]]; then
+  if as_user rime_deployer --build "$RIME_DIR" /usr/share/rime-data "$RIME_DIR/build"; then
+    success "The Rime deployment cache is refreshed."
+    if pgrep -u "$TARGET_USER" -x fcitx5 >/dev/null 2>&1; then
+      as_user fcitx5-remote -r || warn "Fcitx5 could not reload Rime immediately; it will retry after login."
+    fi
+  else
+    warn "The Rime deployment cache could not be refreshed."
+    FAILED_PACKAGES+=("config:rime-deploy-cache")
+  fi
+else
+  warn "The Rime deployment cache could not be refreshed because the schema directory is missing."
+  FAILED_PACKAGES+=("config:rime-schema-directory")
+fi
 
 # ==============================================================================
 # 6. Additional Tooling
@@ -512,8 +533,10 @@ if [ "$EASYTIER_READY" = true ] && \
       [[ -z "$EASYTIER_CORE" ]] && EASYTIER_CORE="$(find "$EASYTIER_TMP" -type f -name easytier-core | head -n 1)"
 
       if [[ -n "$EASYTIER_CLI" && -n "$EASYTIER_CORE" ]]; then
-        as_user install -Dm755 "$EASYTIER_CLI" "$HOME_DIR/.local/bin/easytier-cli"
-        as_user install -Dm755 "$EASYTIER_CORE" "$HOME_DIR/.local/bin/easytier-core"
+        install -Dm755 "$EASYTIER_CLI" "$HOME_DIR/.local/bin/easytier-cli"
+        install -Dm755 "$EASYTIER_CORE" "$HOME_DIR/.local/bin/easytier-core"
+        chown "$TARGET_USER:" "$HOME_DIR/.local/bin/easytier-cli" \
+          "$HOME_DIR/.local/bin/easytier-core"
 
         if [[ -x "$HOME_DIR/.local/bin/easytier-cli" && -x "$HOME_DIR/.local/bin/easytier-core" ]]; then
           success "EasyTier v${EASYTIER_VER} is installed."
@@ -568,7 +591,15 @@ if pacman -Q keyd >/dev/null 2>&1; then
   log "Enable and start the keyd service."
   if systemctl enable --now keyd; then
     log "Reload the keyd configuration."
-    if keyd reload; then
+    KEYD_RELOADED=false
+    for _ in {1..20}; do
+      if keyd reload >/dev/null 2>&1; then
+        KEYD_RELOADED=true
+        break
+      fi
+      sleep 0.5
+    done
+    if [[ "$KEYD_RELOADED" == true ]]; then
       success "The keyd service is enabled. The configuration is reloaded."
     else
       error "The keyd configuration reload failed."
@@ -586,9 +617,6 @@ fi
 # 生成安装后任务失败报告。
 # ------------------------------------------------------------------------------
 if [[ ${#FAILED_PACKAGES[@]} -gt 0 ]]; then
-  DOCS_DIR="$HOME_DIR/Documents"
-  REPORT_FILE="$DOCS_DIR/post-install-failures.txt"
-
   if [[ ! -d "$DOCS_DIR" ]]; then
     as_user mkdir -p "$DOCS_DIR"
   fi
@@ -598,7 +626,7 @@ if [[ ${#FAILED_PACKAGES[@]} -gt 0 ]]; then
     echo -e " Installation failure report - $(date)"
     echo -e "========================================================"
     printf "%s\n" "${FAILED_PACKAGES[@]}"
-  } >>"$REPORT_FILE"
+  } >"$REPORT_FILE"
 
   chown "$TARGET_USER:$TARGET_USER" "$REPORT_FILE"
 
@@ -607,6 +635,7 @@ if [[ ${#FAILED_PACKAGES[@]} -gt 0 ]]; then
   warn "The report is saved to this file:"
   echo -e " ${BOLD}$REPORT_FILE${NC}"
 else
+  rm -f -- "$REPORT_FILE"
   success "All post-install tasks were processed."
 fi
 

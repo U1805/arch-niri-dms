@@ -74,12 +74,33 @@ trap cleanup_incomplete_download EXIT
 trap 'exit 130' INT TERM
 
 curl_download() {
-    local candidate="$1"
-    rm -f -- "$output"
-    /usr/bin/curl -q -g -b "" -fL \
+    local candidate="$1" curl_status
+    # Keep a partial file while switching routes. GitHub release assets and the
+    # configured proxies usually support byte ranges, so a slow route can hand
+    # the unfinished download to the next route instead of starting from zero.
+    if /usr/bin/curl -q -g -b "" -fL \
         --retry 0 --connect-timeout 15 \
         --speed-limit "$direct_speed_limit" --speed-time "$direct_speed_time" \
-        -o "$output" "$candidate"
+        --continue-at - \
+        -o "$output" "$candidate"; then
+        return 0
+    else
+        curl_status=$?
+    fi
+
+    # Some proxy endpoints do not implement Range requests. In that specific
+    # case retry the same route once from zero instead of discarding the route.
+    if (( curl_status == 33 )) && [[ -s "$output" ]]; then
+        printf '==> This route cannot resume; retry it once from zero\n' >&2
+        rm -f -- "$output"
+        /usr/bin/curl -q -g -b "" -fL \
+            --retry 0 --connect-timeout 15 \
+            --speed-limit "$direct_speed_limit" --speed-time "$direct_speed_time" \
+            -o "$output" "$candidate"
+        return
+    fi
+
+    return "$curl_status"
 }
 
 if ! is_public_github_url "$url"; then
