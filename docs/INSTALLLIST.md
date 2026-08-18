@@ -156,7 +156,7 @@ pacman 安装这些软件包。
 | 7.1 | 仓库内 `bsol`、`wuthering`、`senren-banka` 主题；`ttf-gentium-book`, `python-fonttools` | 主题来自本仓库，两个条件生成依赖来自官方 `extra` | 提供 GRUB 主题 | 两个依赖仅在选择千恋万花时安装 |
 | 7.2 | Minegrub | 外部：`Lxtharia/double-minegrub-menu` | 可选 Minecraft 风格 GRUB 主题 | 浅克隆，并直接执行上游 `install.sh` |
 | 7.3 | GRUB 菜单 | Arch 的 GRUB 生成器 | 设置 `GRUB_DEFAULT=saved` 和 `GRUB_SAVEDEFAULT=true` 以记住上次启动项；不调整原生菜单内容和排序，不使用自定义 UKI、Advanced 或 UEFI 生成器 |
-| 7.4 | GRUB 配置验证 | 本地事务逻辑 | 先生成候选配置，验证传统内核、initramfs、Advanced、外置 `grub-btrfs.cfg` 和 Snapshot 引用后再替换活动配置 | 保留 grub-btrfs 原生菜单位置和内容；仅针对 `/boot/grub` 链接到 ESP 的布局，按 ESP UUID 定位外置 `grub-btrfs.cfg` |
+| 7.4 | GRUB 配置验证和视觉 class | 本地事务逻辑 | 先生成候选配置，验证传统内核、initramfs、Advanced、外置 `grub-btrfs.cfg` 和 Snapshot 引用后再替换活动配置 | 不修改 Pacman 管理的 generators；仅在候选配置中按稳定 ID 为 Advanced、UEFI、Snapshot 添加视觉 class，并按 ESP UUID 定位外置 `grub-btrfs.cfg`。Pacman 更新后若原生配置被重新生成，需在项目目录手动执行 `sudo bash scripts/07b-grub-config.sh` 恢复图标 |
 
 ## 5. 固定应用与安装后工具
 

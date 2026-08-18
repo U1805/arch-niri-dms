@@ -83,6 +83,7 @@ archinstall
 - Bootloader: Grub, removable
 - Kernel: linux-lts, linux-zen
 - Authentication: 添加用户
+- Application: Bluetooth, audio pipewire, no print
 - Network: Use Network Manager default backend
 - Timezone: Asia/Shanghai
 
@@ -126,14 +127,3 @@ ping -c 3 bilibili.com
 ```bash
 curl -fsSL https://raw.githubusercontent.com/U1805/arch-niri-dms/refs/heads/main/strap.sh | bash
 ```
-
-## 虚拟机的 3D 加速
-
-使用 VMware、Virt Manager/QEMU 等虚拟机测试时，必须启用虚拟显卡的 3D 加速。
-Niri 是 Wayland 合成器，需要虚拟 GPU 提供可用的 DRM 和 OpenGL 渲染能力。
-
-- VMware：在虚拟机显示设置中启用 **Accelerate 3D graphics**。
-- Virt Manager/QEMU：使用支持 3D 的 Virtio 显卡并启用 3D acceleration（virgl）。
-
-如果安装后 `greetd` 和 Niri 进程均在运行，但屏幕仍然全黑，并在日志中看到
-`no allocator available for device`、`DeviceMissing`，或者虚拟 GPU 显示 `-virgl`，应先检查宿主侧的 3D 加速。

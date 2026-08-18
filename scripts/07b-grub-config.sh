@@ -56,6 +56,7 @@ exe cp -a /etc/default/grub "$GRUB_BACKUP_DIR/grub.default"
 
 GRUB_CANDIDATE=""
 SNAPSHOT_CANDIDATE=""
+CLASS_CANDIDATE=""
 GRUB_NEW_CONFIG="/boot/grub/grub.cfg.arch-niri-dms-new"
 GRUB_COMMITTED=false
 restore_grub_state() {
@@ -65,6 +66,7 @@ restore_grub_state() {
 cleanup_grub_attempt() {
     [[ -z "$GRUB_CANDIDATE" ]] || rm -f -- "$GRUB_CANDIDATE"
     [[ -z "$SNAPSHOT_CANDIDATE" ]] || rm -f -- "$SNAPSHOT_CANDIDATE"
+    [[ -z "$CLASS_CANDIDATE" ]] || rm -f -- "$CLASS_CANDIDATE"
     if [[ "$GRUB_COMMITTED" != true ]]; then
         rm -f -- "$GRUB_NEW_CONFIG"
         restore_grub_state
@@ -79,11 +81,10 @@ set_grub_value GRUB_DEFAULT saved
 set_grub_value GRUB_SAVEDEFAULT true
 
 for generator in /etc/grub.d/10_linux /etc/grub.d/30_uefi-firmware; do
-    [ -f "$generator" ] || {
-        error "A distribution GRUB generator is missing: $generator"
+    [ -x "$generator" ] || {
+        error "A distribution GRUB generator is missing or not executable: $generator"
         exit 1
     }
-    exe chmod 0755 "$generator"
 done
 
 # Add the project power actions after all native generators. Their 99_ prefix
@@ -125,7 +126,7 @@ if [ -x /etc/grub.d/41_snapshots-btrfs ]; then
     if ! awk -v esp_uuid="$ESP_UUID" '
         /^### BEGIN \/etc\/grub.d\/41_snapshots-btrfs ###$/ {
             print
-            print "submenu \047Arch Linux snapshots\047 {"
+            print "submenu \047Arch Linux snapshots\047 --class archive --class submenu {"
             print "    insmod part_gpt"
             print "    insmod fat"
             print "    search --no-floppy --fs-uuid --set=root " esp_uuid
@@ -153,9 +154,36 @@ if [ -x /etc/grub.d/41_snapshots-btrfs ]; then
     SNAPSHOT_CANDIDATE=""
 fi
 
+# The distribution generators currently omit visual classes from the Advanced
+# and UEFI entries. Add metadata only to the generated candidate, anchored by
+# their stable entry IDs. This leaves package-managed generators, menu order,
+# commands, and saved entry IDs unchanged. Snapshot is annotated above while
+# its ESP path is integrated.
+CLASS_CANDIDATE=$(mktemp /tmp/arch-niri-dms-grub-classes.XXXXXX.cfg)
+if ! awk '
+    /gnulinux-advanced-/ && !/--class advanced([[:space:]]|$)/ {
+        sub(/[[:space:]]+\$menuentry_id_option/,
+            " --class advanced --class submenu $menuentry_id_option")
+    }
+    /uefi-firmware/ && !/--class uefi([[:space:]]|$)/ {
+        sub(/[[:space:]]+\$menuentry_id_option/,
+            " --class uefi --class firmware $menuentry_id_option")
+    }
+    { print }
+' "$GRUB_CANDIDATE" > "$CLASS_CANDIDATE"; then
+    error "Visual classes could not be added to the GRUB candidate."
+    restore_grub_state
+    exit 1
+fi
+if ! mv -f "$CLASS_CANDIDATE" "$GRUB_CANDIDATE"; then
+    error "The class-annotated GRUB candidate could not be committed."
+    restore_grub_state
+    exit 1
+fi
+CLASS_CANDIDATE=""
+
 # 07a initially installs the safe four-item Senren layout. Refresh only its
-# geometry after the final menu count is known; do not annotate or rewrite any
-# GRUB menu entry.
+# geometry after the final annotated menu count is known.
 ACTIVE_THEME=$(sed -n -E \
     's|^[[:space:]]*GRUB_THEME="?([^"[:space:]]+)"?.*$|\1|p' \
     /etc/default/grub | head -n 1)
@@ -193,6 +221,10 @@ grep -qE "^[[:space:]]*(linux|linuxefi)[[:space:]].*vmlinuz-linux-(zen|lts)" \
 grep -qE "^[[:space:]]*(initrd|initrdefi)[[:space:]].*initramfs-linux-(zen|lts)\.img" \
     "$GRUB_CANDIDATE" || validation_failed=true
 grep -q "^submenu 'Advanced options for Arch Linux'" "$GRUB_CANDIDATE" || validation_failed=true
+grep -qE "^submenu .*--class advanced --class submenu .*gnulinux-advanced-" \
+    "$GRUB_CANDIDATE" || validation_failed=true
+grep -qE "^[[:space:]]*menuentry .*--class uefi --class firmware .*uefi-firmware" \
+    "$GRUB_CANDIDATE" || validation_failed=true
 if grep -q 'chainloader /EFI/Linux/arch-linux-' "$GRUB_CANDIDATE"; then
     validation_failed=true
 fi
@@ -205,6 +237,8 @@ if [ -x /etc/grub.d/41_snapshots-btrfs ]; then
     grep -q "search --no-floppy --fs-uuid --set=root $ESP_UUID" \
         "$GRUB_CANDIDATE" || validation_failed=true
     grep -q 'configfile /grub/grub-btrfs.cfg' \
+        "$GRUB_CANDIDATE" || validation_failed=true
+    grep -q "^submenu 'Arch Linux snapshots' --class archive --class submenu" \
         "$GRUB_CANDIDATE" || validation_failed=true
 fi
 
