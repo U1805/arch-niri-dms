@@ -151,6 +151,73 @@ sleep 0.5
 # 基础工具和开发环境
 section "Preflight" "Update the system and install base tools"
 
+# Archinstall may configure mkinitcpio to write unified kernel images directly
+# to the ESP. Keep kernel updates independent of /efi by restoring the native
+# GRUB layout under /boot before the first full system upgrade.
+log "Verify mkinitcpio uses the native GRUB /boot layout."
+CONFIGURED_KERNELS=()
+REBUILD_INITRAMFS=false
+for preset in /etc/mkinitcpio.d/linux*.preset; do
+    [ -f "$preset" ] || continue
+    kernel_name=${preset##*/}
+    kernel_name=${kernel_name%.preset}
+    CONFIGURED_KERNELS+=("$kernel_name")
+
+    if ! grep -Eq "^PRESETS=.*'default'.*'fallback'" "$preset" ||
+       ! grep -Fxq "default_image=\"/boot/initramfs-$kernel_name.img\"" "$preset" ||
+       ! grep -Fxq "fallback_image=\"/boot/initramfs-$kernel_name-fallback.img\"" "$preset"; then
+        log "Convert the $kernel_name preset from UKI-only or incomplete output."
+        if ! exe sed -i -E \
+            -e '/^PRESETS=/d' \
+            -e '/^default_(uki|image|options)=/d' \
+            -e '/^fallback_(uki|image|options)=/d' \
+            "$preset"; then
+            error "Failed to configure the mkinitcpio preset: $preset"
+            exit 1
+        fi
+        if ! {
+            printf '\n'
+            printf "PRESETS=('default' 'fallback')\n"
+            printf 'default_image="/boot/initramfs-%s.img"\n' "$kernel_name"
+            printf 'fallback_image="/boot/initramfs-%s-fallback.img"\n' "$kernel_name"
+            printf 'fallback_options="-S autodetect"\n'
+        } >> "$preset"; then
+            error "Failed to finish the mkinitcpio preset: $preset"
+            exit 1
+        fi
+        REBUILD_INITRAMFS=true
+    fi
+
+    for image in "/boot/vmlinuz-$kernel_name" \
+        "/boot/initramfs-$kernel_name.img" \
+        "/boot/initramfs-$kernel_name-fallback.img"; do
+        [ -s "$image" ] || REBUILD_INITRAMFS=true
+    done
+done
+
+if (( ${#CONFIGURED_KERNELS[@]} == 0 )); then
+    error "No Linux mkinitcpio preset was found. Install a kernel before running this installer."
+    exit 1
+fi
+
+if [[ "$REBUILD_INITRAMFS" == true ]]; then
+    if ! exe mkinitcpio -P; then
+        error "The native initramfs images could not be generated. Do not update the system."
+        exit 1
+    fi
+fi
+
+for kernel_name in "${CONFIGURED_KERNELS[@]}"; do
+    for image in "/boot/vmlinuz-$kernel_name" \
+        "/boot/initramfs-$kernel_name.img" \
+        "/boot/initramfs-$kernel_name-fallback.img"; do
+        if [ ! -s "$image" ]; then
+            error "A required native GRUB boot file is missing: $image"
+            exit 1
+        fi
+    done
+done
+
 log "Synchronize package databases and update the system."
 if ! exe pacman -Syu --noconfirm; then
     error "The system update failed. Check the network and repository configuration."

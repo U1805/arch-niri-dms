@@ -55,6 +55,91 @@ cleanup_minegrub() {
     fi
 }
 
+SENREN_GFXMODE_STATE_DIR="/var/lib/arch-niri-dms"
+SENREN_GFXMODE_STATE="$SENREN_GFXMODE_STATE_DIR/senren-banka-grub-gfxmode"
+
+remember_pre_senren_gfxmode() {
+    [ -f "$SENREN_GFXMODE_STATE" ] && return 0
+    mkdir -p "$SENREN_GFXMODE_STATE_DIR"
+    if grep -q '^GRUB_GFXMODE=' /etc/default/grub; then
+        grep -m1 '^GRUB_GFXMODE=' /etc/default/grub > "$SENREN_GFXMODE_STATE"
+    else
+        printf '%s\n' '__ABSENT__' > "$SENREN_GFXMODE_STATE"
+    fi
+}
+
+restore_pre_senren_gfxmode() {
+    local saved
+    [ -f "$SENREN_GFXMODE_STATE" ] || return 0
+    saved=$(cat "$SENREN_GFXMODE_STATE")
+    sed -i '/^GRUB_GFXMODE=/d' /etc/default/grub
+    [ "$saved" = '__ABSENT__' ] || printf '%s\n' "$saved" >> /etc/default/grub
+    rm -f -- "$SENREN_GFXMODE_STATE"
+    log "Restore the GRUB_GFXMODE value from before Senren Banka was selected."
+}
+
+detect_grub_resolution() {
+    if [[ "${SENREN_GRUB_RESOLUTION:-}" =~ ^[0-9]{3,5}x[0-9]{3,5}$ ]]; then
+        printf '%s\n' "$SENREN_GRUB_RESOLUTION"
+        return
+    fi
+    printf '%s\n' '1920x1200'
+}
+
+prepare_senren_banka_theme() {
+    local theme_dir="$1" resolution source_dir stage_dir old_dir generated
+    resolution=$(detect_grub_resolution)
+    [[ "$resolution" =~ ^[0-9]{3,5}x[0-9]{3,5}$ ]] || resolution=1920x1200
+
+    source_dir="$SOURCE_BASE/senren-banka"
+    [ -d "$source_dir" ] || {
+        error "The repository Senren Banka theme is missing: $source_dir"
+        return 1
+    }
+    stage_dir=$(mktemp -d "${theme_dir%/*}/.senren-banka.new.XXXXXX") || return 1
+    if ! cp -a "$source_dir/." "$stage_dir/"; then
+        rm -rf -- "$stage_dir"
+        return 1
+    fi
+
+    log "Generate the Senren Banka theme for $resolution."
+    for helper in configure-resolution.py build-layout-variants.py build-fonts.py; do
+        [ -f "$stage_dir/$helper" ] || {
+            error "The Senren Banka helper is missing: $source_dir/$helper"
+            rm -rf -- "$stage_dir"
+            return 1
+        }
+    done
+    if ! exe python3 "$stage_dir/configure-resolution.py" "$resolution" ||
+        ! exe python3 "$stage_dir/build-layout-variants.py" ||
+        ! exe python3 "$stage_dir/build-fonts.py"; then
+        rm -rf -- "$stage_dir"
+        return 1
+    fi
+    for generated in background.png title_logo.png theme.txt \
+        SenrenMenuMain.pf2 SenrenMenuMessage.pf2 GRUBBlank.pf2; do
+        [ -s "$stage_dir/$generated" ] || {
+            error "The Senren Banka generated file is missing: $generated"
+            rm -rf -- "$stage_dir"
+            return 1
+        }
+    done
+
+    old_dir="${theme_dir}.old.$$"
+    rm -rf -- "$old_dir"
+    if [ -e "$theme_dir" ]; then
+        mv -- "$theme_dir" "$old_dir" || { rm -rf -- "$stage_dir"; return 1; }
+    fi
+    if ! mv -- "$stage_dir" "$theme_dir"; then
+        [ ! -e "$old_dir" ] || mv -- "$old_dir" "$theme_dir"
+        rm -rf -- "$stage_dir"
+        return 1
+    fi
+    rm -rf -- "$old_dir"
+    THEME_GFXMODE="$resolution"
+    success "The Senren Banka assets and pinned Gentium Book fonts are ready."
+}
+
 # ------------------------------------------------------------------------------
 # 同步主题到系统目录。
 # ------------------------------------------------------------------------------
@@ -93,6 +178,16 @@ if [ -d "$SOURCE_BASE" ]; then
                     # 背景图片
                     exe cp "$bg" "$DEST_DIR/$BG_NAME/background.jpg"
                 done
+            fi
+        elif [ "$THEME_BASENAME" = "senren-banka" ] && [ -d "$dir" ] && [ -f "$dir/theme.txt" ]; then
+            # An existing generated copy remains bootable until the selected
+            # theme is rebuilt transactionally in Step 3.
+            if [ ! -f "$DEST_DIR/$THEME_BASENAME/theme.txt" ]; then
+                log "Synchronize the initial $THEME_BASENAME theme."
+                exe mkdir -p "$DEST_DIR/$THEME_BASENAME"
+                exe cp -a "$dir/." "$DEST_DIR/$THEME_BASENAME/"
+            else
+                log "Keep the current $THEME_BASENAME assets until regeneration succeeds."
             fi
         elif [ -d "$dir" ] && [ -f "$dir/theme.txt" ]; then
             log "Synchronize the $THEME_BASENAME theme."
@@ -134,6 +229,7 @@ section "Step 2/3" "Select a theme"
 
 INSTALL_MINEGRUB=false
 SKIP_THEME=false
+THEME_GFXMODE=""
 
 MINEGRUB_OPTION_NAME="Minegrub"
 SKIP_OPTION_NAME="No theme (skip or clear)"
@@ -207,6 +303,7 @@ GRUB_CONF="/etc/default/grub"
 if [ "$SKIP_THEME" == "true" ]; then
     log "Clear the GRUB theme configuration."
     cleanup_minegrub
+    restore_pre_senren_gfxmode
     
     if [ -f "$GRUB_CONF" ]; then
         if grep -q "^GRUB_THEME=" "$GRUB_CONF"; then
@@ -219,6 +316,7 @@ if [ "$SKIP_THEME" == "true" ]; then
     
     elif [ "$INSTALL_MINEGRUB" == "true" ]; then
     log "Prepare to install the Minegrub theme."
+    restore_pre_senren_gfxmode
     
     if ! command -v git >/dev/null 2>&1; then
         error "git is not available. Minegrub cannot be cloned."
@@ -252,6 +350,23 @@ if [ "$SKIP_THEME" == "true" ]; then
 else
     cleanup_minegrub
     
+    if [ "$THEME_NAME" = "senren-banka" ]; then
+        log "Install the Senren Banka font and asset generation dependencies."
+        if ! exe pacman -S --noconfirm --needed \
+            ttf-gentium-book python-fonttools; then
+            error "The Senren Banka theme dependencies could not be installed."
+            exit 1
+        fi
+        if ! python3 -c 'from PIL import Image' >/dev/null 2>&1; then
+            error "python-pillow is required. Install phase 5.8 before the GRUB theme phase."
+            exit 1
+        fi
+        remember_pre_senren_gfxmode
+        prepare_senren_banka_theme "${THEME_PATH%/theme.txt}" || exit 1
+    else
+        restore_pre_senren_gfxmode
+    fi
+
     if [ -f "$GRUB_CONF" ]; then
         if grep -q "^GRUB_THEME=" "$GRUB_CONF"; then
             exe sed -i "s|^GRUB_THEME=.*|GRUB_THEME=\"$THEME_PATH\"|" "$GRUB_CONF"
@@ -265,7 +380,11 @@ else
             exe sed -i 's/^GRUB_TERMINAL_OUTPUT="console"/#GRUB_TERMINAL_OUTPUT="console"/' "$GRUB_CONF"
         fi
         
-        if ! grep -q "^GRUB_GFXMODE=" "$GRUB_CONF"; then
+        if [ -n "$THEME_GFXMODE" ] && grep -q "^GRUB_GFXMODE=" "$GRUB_CONF"; then
+            exe sed -i "s|^GRUB_GFXMODE=.*|GRUB_GFXMODE=\"$THEME_GFXMODE\"|" "$GRUB_CONF"
+        elif [ -n "$THEME_GFXMODE" ]; then
+            echo "GRUB_GFXMODE=\"$THEME_GFXMODE\"" >> "$GRUB_CONF"
+        elif ! grep -q "^GRUB_GFXMODE=" "$GRUB_CONF"; then
             echo 'GRUB_GFXMODE=auto' >> "$GRUB_CONF"
         fi
         success "The GRUB theme is set to $THEME_NAME."

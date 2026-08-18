@@ -8,7 +8,7 @@
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
   // edit
-  "use_system_path_prompts": false,
+  "use_system_path_prompts": true,
   "autosave": {
     "after_delay": {
       "milliseconds": 1000

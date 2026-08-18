@@ -1,0 +1,91 @@
+title-text: ""
+desktop-image: "background.png"
+desktop-color: "#ffffff"
+message-font: "Senren Menu Bold 22"
+message-color: "#8f6829"
+message-bg-color: "#fffdf7"
+terminal-left: "0"
+terminal-top: "0"
+terminal-width: "100%"
+terminal-height: "100%"
+terminal-border: "0"
+
++ image {
+  left = 36
+  top = 60
+  width = 437
+  height = 184
+  file = "title_logo.png"
+}
+
++ boot_menu {
+  left = 58
+  top = 506
+  width = 570
+  height = 356
+  icon_width = 300
+  icon_height = 56
+  item_icon_space = 0
+  item_height = 56
+  item_padding = 0
+  item_spacing = 44
+  item_font = "GRUB Blank Regular 12"
+  item_color = "#ffffff"
+  selected_item_font = "GRUB Blank Regular 12"
+  selected_item_color = "#ffffff"
+  scrollbar = false
+}
+
++ boot_menu {
+  left = 61
+  top = 500
+  width = 570
+  height = 356
+  icon_width = 1
+  icon_height = 1
+  item_icon_space = 52
+  item_height = 56
+  item_padding = 0
+  item_spacing = 44
+  item_font = "Senren Menu Bold 30"
+  item_color = "#f2eee2"
+  selected_item_font = "Senren Menu Bold 30"
+  selected_item_color = "#f2dfd6"
+  scrollbar = false
+}
+
++ boot_menu {
+  left = 59
+  top = 499
+  width = 570
+  height = 356
+  icon_width = 1
+  icon_height = 1
+  item_icon_space = 52
+  item_height = 56
+  item_padding = 0
+  item_spacing = 44
+  item_font = "Senren Menu Bold 30"
+  item_color = "#756947"
+  selected_item_font = "Senren Menu Bold 30"
+  selected_item_color = "#714238"
+  scrollbar = false
+}
+
++ boot_menu {
+  left = 58
+  top = 498
+  width = 570
+  height = 356
+  icon_width = 1
+  icon_height = 1
+  item_icon_space = 52
+  item_height = 56
+  item_padding = 0
+  item_spacing = 44
+  item_font = "Senren Menu Bold 30"
+  item_color = "#aa914d"
+  selected_item_font = "Senren Menu Bold 30"
+  selected_item_color = "#a95643"
+  scrollbar = false
+}

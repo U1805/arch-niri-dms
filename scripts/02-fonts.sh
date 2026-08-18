@@ -61,7 +61,9 @@ success "ArchLinuxCN is configured."
 section "Step 2/3" "Install base fonts"
 
 log "Install base fonts from the official repositories."
-exe pacman -S --noconfirm --needed ttf-liberation noto-fonts noto-fonts-cjk noto-fonts-emoji otf-font-awesome ttf-jetbrains-mono-nerd
+exe pacman -S --noconfirm --needed \
+    ttf-liberation noto-fonts noto-fonts-cjk noto-fonts-emoji \
+    otf-font-awesome ttf-jetbrains-mono-nerd
 
 log "Install Maple Mono NF from ArchLinuxCN."
 exe pacman -S --noconfirm --needed ttf-maplemono-nf

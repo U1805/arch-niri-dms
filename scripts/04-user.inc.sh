@@ -85,14 +85,6 @@ else
     success "sudo access is configured."
 fi
 
-# 删除旧版安装程序创建的永久免密规则。
-LEGACY_NOPASSWD_FILE="/etc/sudoers.d/10-shorin-nopasswd"
-if [ -f "$LEGACY_NOPASSWD_FILE" ]; then
-    log "Remove the old persistent NOPASSWD rule."
-    exe rm -f -- "$LEGACY_NOPASSWD_FILE"
-    success "The old NOPASSWD rule is removed."
-fi
-
 if ! enable_temporary_sudo; then
     exit 1
 fi

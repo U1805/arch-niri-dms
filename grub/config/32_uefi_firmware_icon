@@ -1,6 +1,0 @@
-#!/bin/sh
-set -eu
-
-# Keep the package-owned generator unchanged and add the theme class it omits.
-/bin/sh /etc/grub.d/30_uefi-firmware | \
-    sed "s/menuentry 'UEFI Firmware Settings'/menuentry 'UEFI Firmware Settings' --class efi/"

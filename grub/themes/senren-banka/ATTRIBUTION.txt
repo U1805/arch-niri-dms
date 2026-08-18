@@ -1,0 +1,18 @@
+Icon source
+===========
+The GRUB menu glyphs under theme/source/icons are modified from the light icon
+set of vinceliuice/Elegant-grub2-themes. Pale circular backing tiles are removed
+and glyphs are recoloured to the Senren warm-brown palette. Elegant is GPL-3.0;
+a copy of that license is included as LICENSE-Elegant-GPL-3.0.txt.
+
+Game artwork
+============
+Senren＊Banka / 千恋＊万花 title artwork is used for personal theme development
+and testing. Rights remain with the respective rights holders. This package
+does not assert a free redistribution license for the game artwork.
+
+Font
+====
+Gentium Book font binaries are not included in this ZIP. The installer obtains
+the system package and locally generates GRUB PF2 files from the pinned
+Gentium Book Bold revision 7.000 face.

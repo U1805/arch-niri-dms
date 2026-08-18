@@ -36,7 +36,7 @@
 | 7 | `05b-dms-tools.sh` | 安装桌面辅助工具和系统集成 |
 | 8 | `06-config.sh` | 部署配置和壁纸，验证桌面状态 |
 | 9 | `07a-grub-theme.sh` | 同步、选择并应用 GRUB 主题 |
-| 10 | `07b-grub-config.sh` | 配置 GRUB UKI、参数和菜单，并验证候选配置 |
+| 10 | `07b-grub-config.sh` | 生成器配置 GRUB 菜单，并验证候选配置 |
 | 11 | `99a-apps.sh` | 安装官方仓库、AUR/ArchLinuxCN 和 Flatpak 应用 |
 | 12 | `99b-apps.sh` | 安装条件软件包和外部资源，应用安装后设置 |
 | 13 | `install.sh` 清理 | 清理缓存并保存日志 |
@@ -153,11 +153,10 @@ pacman 安装这些软件包。
 
 | 顺序 | 包/资源 | 来源 | 作用 | 条件/备注 |
 |---:|---|---|---|---|
-| 7.1 | 仓库内 `bsol`、`wuthering` 主题 | 本仓库 | 提供 GRUB 主题 | 每次安装均同步到 `/usr/share/grub/themes`，并删除旧文件 |
+| 7.1 | 仓库内 `bsol`、`wuthering`、`senren-banka` 主题；`ttf-gentium-book`, `python-fonttools` | 主题来自本仓库，两个条件生成依赖来自官方 `extra` | 提供 GRUB 主题 | 两个依赖仅在选择千恋万花时安装 |
 | 7.2 | Minegrub | 外部：`Lxtharia/double-minegrub-menu` | 可选 Minecraft 风格 GRUB 主题 | 浅克隆，并直接执行上游 `install.sh` |
-| 7.3 | GRUB 内核参数和菜单 | 本地配置 | 记住上次选择 | 设置 `GRUB_DEFAULT=saved` 和 `GRUB_SAVEDEFAULT=true`。禁用冲突的生成器 |
-| 7.4 | GRUB 菜单顺序和图标 | 本地配置 | 生成 Arch、高级选项、Windows、UEFI、快照和电源菜单 | 默认内核按 `linux-zen`、`linux`、`linux-lts`、`linux-hardened` 回退；高级选项仅提供独立的 LTS 恢复入口；按检测结果省略 Windows 或高级选项 |
-| 7.6 | GRUB 电源菜单 | 本地配置 | 添加重启和关机菜单项 | 更新 `/etc/grub.d/99_custom` |
+| 7.3 | GRUB 菜单 | Arch 的 GRUB 生成器 | 设置 `GRUB_DEFAULT=saved` 和 `GRUB_SAVEDEFAULT=true` 以记住上次启动项；不调整原生菜单内容和排序，不使用自定义 UKI、Advanced 或 UEFI 生成器 |
+| 7.4 | GRUB 配置验证 | 本地事务逻辑 | 先生成候选配置，验证传统内核、initramfs、Advanced、外置 `grub-btrfs.cfg` 和 Snapshot 引用后再替换活动配置 | 保留 grub-btrfs 原生菜单位置和内容；仅针对 `/boot/grub` 链接到 ESP 的布局，按 ESP UUID 定位外置 `grub-btrfs.cfg` |
 
 ## 5. 固定应用与安装后工具
 
