@@ -1,5 +1,17 @@
 {
   "dankHooks": {
     "enabled": true
+  },
+  "bongoCat": {
+    "enabled": true,
+    "catYOffset": 2,
+    "mouseEnabled": true,
+    "catColorMode": "primary",
+    "enableBlinking": true,
+    "classicIdle": false,
+    "showMetrics": false,
+    "soundEnabled": false,
+    "selectedDevicePath": "all",
+    "catSizePercent": 87
   }
 }

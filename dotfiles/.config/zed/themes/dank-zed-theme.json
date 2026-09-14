@@ -80,7 +80,7 @@
                 "terminal.bright_foreground": "#f8f9ff",
                 "terminal.dim_foreground": "#c6c5d0",
                 "terminal.ansi.black": "#121318",
-                "terminal.ansi.bright_black": "#999ba5",
+                "terminal.ansi.bright_black": "#404249",
                 "terminal.ansi.dim_black": "#121318",
                 "terminal.ansi.red": "#ff7296",
                 "terminal.ansi.bright_red": "#ff9fb7",
@@ -205,12 +205,12 @@
                         "font_weight": null
                     },
                     "comment": {
-                        "color": "#999ba5",
+                        "color": "#404249",
                         "font_style": "italic",
                         "font_weight": null
                     },
                     "comment.doc": {
-                        "color": "#999ba5",
+                        "color": "#404249",
                         "font_style": "italic",
                         "font_weight": null
                     },
@@ -459,7 +459,7 @@
                 "terminal.bright_foreground": "#d6d7db",
                 "terminal.dim_foreground": "#46464f",
                 "terminal.ansi.black": "#121318",
-                "terminal.ansi.bright_black": "#78797c",
+                "terminal.ansi.bright_black": "#000004",
                 "terminal.ansi.dim_black": "#121318",
                 "terminal.ansi.red": "#8a374c",
                 "terminal.ansi.bright_red": "#af576e",
@@ -471,7 +471,7 @@
                 "terminal.ansi.bright_yellow": "#bd9838",
                 "terminal.ansi.dim_yellow": "#af8a2b",
                 "terminal.ansi.blue": "#515c99",
-                "terminal.ansi.bright_blue": "#5e6bb0",
+                "terminal.ansi.bright_blue": "#5e6bb1",
                 "terminal.ansi.dim_blue": "#515c99",
                 "terminal.ansi.magenta": "#dae0ff",
                 "terminal.ansi.bright_magenta": "#dae0ff",
@@ -505,13 +505,13 @@
                 "hidden.border": "#c6c5d060",
                 "hint": "#515b92",
                 "hint.background": "#dee1ff80",
-                "hint.border": "#09164b",
+                "hint.border": "#0a164b",
                 "ignored": "#46464f60",
                 "ignored.background": "#e3e1ec40",
                 "ignored.border": "#c6c5d040",
                 "info": "#515b92",
                 "info.background": "#dee1ff80",
-                "info.border": "#09164b",
+                "info.border": "#0a164b",
                 "modified": "#af8a2b",
                 "modified.background": "#af8a2b1A",
                 "modified.border": "#af8a2b",
@@ -584,12 +584,12 @@
                         "font_weight": null
                     },
                     "comment": {
-                        "color": "#78797c",
+                        "color": "#000004",
                         "font_style": "italic",
                         "font_weight": null
                     },
                     "comment.doc": {
-                        "color": "#78797c",
+                        "color": "#000004",
                         "font_style": "italic",
                         "font_weight": null
                     },
@@ -838,7 +838,7 @@
                 "terminal.bright_foreground": "#f8f9ff",
                 "terminal.dim_foreground": "#c6c5d0",
                 "terminal.ansi.black": "#121318",
-                "terminal.ansi.bright_black": "#999ba5",
+                "terminal.ansi.bright_black": "#404249",
                 "terminal.ansi.dim_black": "#121318",
                 "terminal.ansi.red": "#ff7296",
                 "terminal.ansi.bright_red": "#ff9fb7",
@@ -963,12 +963,12 @@
                         "font_weight": null
                     },
                     "comment": {
-                        "color": "#999ba5",
+                        "color": "#404249",
                         "font_style": "italic",
                         "font_weight": null
                     },
                     "comment.doc": {
-                        "color": "#999ba5",
+                        "color": "#404249",
                         "font_style": "italic",
                         "font_weight": null
                     },
@@ -1217,7 +1217,7 @@
                 "terminal.bright_foreground": "#d6d7db",
                 "terminal.dim_foreground": "#46464f",
                 "terminal.ansi.black": "#121318",
-                "terminal.ansi.bright_black": "#78797c",
+                "terminal.ansi.bright_black": "#000004",
                 "terminal.ansi.dim_black": "#121318",
                 "terminal.ansi.red": "#8a374c",
                 "terminal.ansi.bright_red": "#af576e",
@@ -1229,7 +1229,7 @@
                 "terminal.ansi.bright_yellow": "#bd9838",
                 "terminal.ansi.dim_yellow": "#af8a2b",
                 "terminal.ansi.blue": "#515c99",
-                "terminal.ansi.bright_blue": "#5e6bb0",
+                "terminal.ansi.bright_blue": "#5e6bb1",
                 "terminal.ansi.dim_blue": "#515c99",
                 "terminal.ansi.magenta": "#dae0ff",
                 "terminal.ansi.bright_magenta": "#dae0ff",
@@ -1263,13 +1263,13 @@
                 "hidden.border": "#c6c5d060",
                 "hint": "#515b92",
                 "hint.background": "#dee1ff80",
-                "hint.border": "#09164b",
+                "hint.border": "#0a164b",
                 "ignored": "#46464f60",
                 "ignored.background": "#e3e1ec40",
                 "ignored.border": "#c6c5d040",
                 "info": "#515b92",
                 "info.background": "#dee1ff80",
-                "info.border": "#09164b",
+                "info.border": "#0a164b",
                 "modified": "#af8a2b",
                 "modified.background": "#af8a2b1A",
                 "modified.border": "#af8a2b",
@@ -1342,12 +1342,12 @@
                         "font_weight": null
                     },
                     "comment": {
-                        "color": "#78797c",
+                        "color": "#000004",
                         "font_style": "italic",
                         "font_weight": null
                     },
                     "comment.doc": {
-                        "color": "#78797c",
+                        "color": "#000004",
                         "font_style": "italic",
                         "font_weight": null
                     },

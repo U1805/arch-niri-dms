@@ -8,6 +8,9 @@
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
   // edit
+  "collaboration_panel": {
+    "button": false
+  },
   "use_system_path_prompts": true,
   "autosave": {
     "after_delay": {
@@ -28,7 +31,7 @@
     "dock": "left"
   },
   "project_panel": {
-    "dock": "left"
+    "dock": "right"
   },
   "icon_theme": {
     "mode": "light",
