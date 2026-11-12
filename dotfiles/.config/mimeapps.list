@@ -1,18 +1,18 @@
 [Default Applications]
 application/json=dev.zed.Zed.desktop
 application/octet-stream=vim.desktop
-application/pdf=com.wps.Office.pdf.desktop
-application/vnd.comicbook+zip=com.wps.Office.pdf.desktop
-application/vnd.comicbook-rar=com.wps.Office.pdf.desktop
+application/pdf=zen.desktop
+application/vnd.comicbook+zip=zen.desktop
+application/vnd.comicbook-rar=zen.desktop
 application/vnd.microsoft.portable-executable=shorin-proton-wrapper-run-windows-program.desktop
-application/x-bzpdf=com.wps.Office.pdf.desktop
-application/x-ext-pdf=com.wps.Office.pdf.desktop
+application/x-bzpdf=zen.desktop
+application/x-ext-pdf=zen.desktop
 application/x-extension-htm=zen.desktop
 application/x-extension-html=zen.desktop
 application/x-extension-shtml=zen.desktop
 application/x-extension-xht=zen.desktop
 application/x-extension-xhtml=zen.desktop
-application/x-gzpdf=com.wps.Office.pdf.desktop
+application/x-gzpdf=zen.desktop
 application/x-ms-dos-executable=shorin-proton-wrapper-run-windows-program.desktop
 application/x-msdownload=shorin-proton-wrapper-run-windows-program.desktop
 application/x-shellscript=vim.desktop
@@ -44,6 +44,7 @@ x-scheme-handler/http=zen.desktop
 x-scheme-handler/https=zen.desktop
 x-scheme-handler/mihomo=sparkle.desktop
 x-scheme-handler/sparkle=sparkle.desktop
+x-scheme-handler/claude-cli=claude-code-url-handler.desktop
 
 [Added Associations]
 application/json=vim.desktop;dev.zed.Zed.desktop;
@@ -84,5 +85,6 @@ x-scheme-handler/clash=clash-verge.desktop;
 x-scheme-handler/clash-verge=clash-verge.desktop;
 x-scheme-handler/http=zen.desktop;
 x-scheme-handler/https=zen.desktop;
+application/zip=org.gnome.FileRoller.desktop;com.wps.Office.wpp.desktop;
 
 [Removed Associations]

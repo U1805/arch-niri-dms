@@ -177,49 +177,51 @@ AUR/ArchLinuxCN 条目由目标用户通过 Paru 批量安装，Flatpak 应用�
 | 8.7 | `wine` | 官方和 multilib | 提供 Windows 应用兼容层 | 99b 配置 Gecko、Mono、Wine 前缀和字体 |
 | 8.8 | `virt-manager` | 官方 | 提供 KVM/QEMU 图形界面 | 99b 在物理机上配置虚拟化组件和服务 |
 | 8.9 | `zed` | 官方 `extra` | 代码编辑器 | 无 |
-| 8.10 | `keyd` | 官方 | 系统级按键重映射 | 服务启动与配置重载在 8.37 执行 |
+| 8.10 | `keyd` | 官方 | 系统级按键重映射 | 服务启动与配置重载在 8.39 执行 |
 | 8.11 | `watchexec` | 官方 | 文件变化命令执行器 | 无 |
 | 8.12 | `btrfs-assistant` | 官方 `extra` | 以图形界面管理 Btrfs 子卷和 Snapper 快照 | 软件包提供默认配置和 Polkit 策略 |
 | 8.13 | `bazaar` | 官方 `extra` | 以 Flathub 为重点的 Flatpak 图形应用商店 | 固定安装 |
+| 8.14 | `tmux` | 官方 `extra` | 终端会话复用与分屏 | 固定安装 |
 
 ### 5.2 通过 Paru 路由的应用
 
 | 顺序 | 包 | 来源 | 作用 |
 |---:|---|---|---|
-| 8.14 | `mark-shot` | archlinuxcn | 提供截图、标注、录制和 Niri 窗口识别。 |
-| 8.15 | `sparkle-bin` | AUR | Sparkle Clash 图形界面 |
-| 8.16 | `zen-browser` | archlinuxcn | Zen Browser。 |
+| 8.15 | `mark-shot` | archlinuxcn | 提供截图、标注、录制和 Niri 窗口识别。 |
+| 8.16 | `sparkle-bin` | AUR | Sparkle Clash 图形界面 |
+| 8.17 | `zen-browser` | archlinuxcn | Zen Browser。 |
+| 8.18 | `fcitx5-vinput` | archlinuxcn | Fcitx5 离线语音输入插件 |
 
 ### 5.3 Flatpak 应用
 
 | 顺序 | 应用 ID | 来源 | 作用 |
 |---:|---|---|---|
-| 8.17 | `com.rustdesk.RustDesk` | Flathub | 远程桌面 |
-| 8.18 | `it.mijorus.gearlever` | Flathub | AppImage 管理 |
-| 8.19 | `com.google.Chrome` | Flathub | Chrome 浏览器 |
-| 8.20 | `org.keepassxc.KeePassXC` | Flathub | 密码管理 |
-| 8.21 | `com.qq.QQ` | Flathub | QQ |
-| 8.22 | `com.spotify.Client` | Flathub | Spotify |
-| 8.23 | `com.tencent.WeChat` | Flathub | 微信 |
-| 8.24 | `com.tencent.wemeet` | Flathub | 腾讯会议 |
-| 8.25 | `com.wps.Office` | Flathub | WPS Office |
-| 8.26 | `md.obsidian.Obsidian` | Flathub | Obsidian |
-| 8.27 | `org.telegram.desktop` | Flathub | Telegram |
+| 8.19 | `com.rustdesk.RustDesk` | Flathub | 远程桌面 |
+| 8.20 | `it.mijorus.gearlever` | Flathub | AppImage 管理 |
+| 8.21 | `com.google.Chrome` | Flathub | Chrome 浏览器 |
+| 8.22 | `org.keepassxc.KeePassXC` | Flathub | 密码管理 |
+| 8.23 | `com.qq.QQ` | Flathub | QQ |
+| 8.24 | `com.spotify.Client` | Flathub | Spotify |
+| 8.25 | `com.tencent.WeChat` | Flathub | 微信 |
+| 8.26 | `com.tencent.wemeet` | Flathub | 腾讯会议 |
+| 8.27 | `com.wps.Office` | Flathub | WPS Office |
+| 8.28 | `md.obsidian.Obsidian` | Flathub | Obsidian |
+| 8.29 | `org.telegram.desktop` | Flathub | Telegram |
 
 ### 5.4 条件追加包和外部资源
 
 | 顺序 | 包/资源 | 来源 | 作用 | 触发条件 |
 |---:|---|---|---|---|
-| 8.28 | `qemu-full`, `swtpm`, `dnsmasq`, `virt-viewer`（以及 `virt-manager`） | 官方 | 提供 KVM、TPM、NAT 和虚拟机查看器 | 仅在物理机上配置。启用 libvirtd。将用户加入相关组 |
-| 8.29 | `wine-gecko`, `wine-mono`, 临时 `xorg-server-xvfb` | 官方/multilib | Wine 浏览器、.NET 兼容及无桌面环境下的虚拟 X11 显示 | Wine Prefix 未初始化时，在 Xvfb 中运行 `wineboot`；只卸载本次事务新增的 Xvfb 及依赖，失败或中断同样清理 |
-| 8.30 | `simfang.ttf`, `simhei.ttf`, `simkai.ttf`, `simsun.ttc` | 外部：SHORiN-KiWATA GitHub | 提供 Wine 中文字体 | 安装 Wine 后逐个下载获取，失败时清理 `.part` 文件 |
-| 8.31 | U1805/rime 仓库 | 外部：GitHub | 提供 Rime 方案、词典、Lua 和 OpenCC 配置 | 完整部署成功后写入标记 |
-| 8.32 | `wanxiang-lts-zh-hans.gram` | 外部：万象官方 CNB 加速下载 | U1805/rime 所需万象语法模型 | 不打包进仓库，安装时单独下载 |
-| 8.33 | `rapidocr`, `onnxruntime` | 外部：PyPI，经清华 PyPI 镜像和 `uv pip` | 提供 mark-shot OCR | 先验证已有虚拟环境，缺失时在临时环境安装并验证，成功后替换，失败时保留旧环境 |
-| 8.34 | `@earendil-works/pi-coding-agent` | 外部：npm，经 npmmirror 和 Bun | 提供 AI 编程助手 | 仅当 bun 存在时安装 |
-| 8.35 | EasyTier 最新稳定版 x86_64 ZIP | 外部：GitHub Release | 提供 P2P VPN | 两个命令已存在时跳过；仅验证 ZIP，不验证签名或哈希 |
-| 8.36 | GTK、终端、Flatpak 和应用菜单设置 | 本地操作 | 配置深色主题、默认终端、Flatpak 权限和应用菜单 | 安装应用后执行。隐藏辅助程序入口。保留 Fcitx 和 Thunar 主入口 |
-| 8.37 | `keyd.service` 和 keyd 配置 | 本地操作 | 启用 keyd 并重新加载按键映射 | 仅当 keyd 已安装时执行；启动后短暂重试 reload，避免服务套接字初始化竞态；失败时写入报告 |
+| 8.30 | `qemu-full`, `swtpm`, `dnsmasq`, `virt-viewer`（以及 `virt-manager`） | 官方 | 提供 KVM、TPM、NAT 和虚拟机查看器 | 仅在物理机上配置。启用 libvirtd。将用户加入相关组 |
+| 8.31 | `wine-gecko`, `wine-mono`, 临时 `xorg-server-xvfb` | 官方/multilib | Wine 浏览器、.NET 兼容及无桌面环境下的虚拟 X11 显示 | Wine Prefix 未初始化时，在 Xvfb 中运行 `wineboot`；只卸载本次事务新增的 Xvfb 及依赖，失败或中断同样清理 |
+| 8.32 | `simfang.ttf`, `simhei.ttf`, `simkai.ttf`, `simsun.ttc` | 外部：SHORiN-KiWATA GitHub | 提供 Wine 中文字体 | 安装 Wine 后逐个下载获取，失败时清理 `.part` 文件 |
+| 8.33 | U1805/rime 仓库 | 外部：GitHub | 提供 Rime 方案、词典、Lua 和 OpenCC 配置 | 完整部署成功后写入标记 |
+| 8.34 | `wanxiang-lts-zh-hans.gram` | 外部：万象官方 CNB 加速下载 | U1805/rime 所需万象语法模型 | 不打包进仓库，安装时单独下载 |
+| 8.35 | `rapidocr`, `onnxruntime` | 外部：PyPI，经清华 PyPI 镜像和 `uv pip` | 提供 mark-shot OCR | 先验证已有虚拟环境，缺失时在临时环境安装并验证，成功后替换，失败时保留旧环境 |
+| 8.36 | `@earendil-works/pi-coding-agent` | 外部：npm，经 npmmirror 和 Bun | 提供 AI 编程助手 | 仅当 bun 存在时安装 |
+| 8.37 | EasyTier 最新稳定版 x86_64 ZIP | 外部：GitHub Release | 提供 P2P VPN | 两个命令已存在时跳过；仅验证 ZIP，不验证签名或哈希 |
+| 8.38 | GTK、终端、Flatpak 和应用菜单设置 | 本地操作 | 配置深色主题、默认终端、Flatpak 权限和应用菜单 | 安装应用后执行。隐藏辅助程序入口。保留 Fcitx 和 Thunar 主入口 |
+| 8.39 | `keyd.service` 和 keyd 配置 | 本地操作 | 启用 keyd 并重新加载按键映射 | 仅当 keyd 已安装时执行；启动后短暂重试 reload，避免服务套接字初始化竞态；失败时写入报告 |
 
 ## 6. 无法预先列出的安装项
 

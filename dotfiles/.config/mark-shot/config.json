@@ -1,216 +1,236 @@
 {
-    "annotation": {
-        "defaultColor": "#FF4D4D",
-        "defaultTool": "pen",
-        "fileDefaultTool": "pen",
-        "fullscreenDefaultTool": "pen"
-    },
-    "capture": {
-        "freezeScope": "all-screens",
-        "hideOwnWindows": true,
-        "includeCursor": false,
-        "selectionHistory": [
-            {
-                "h": 267,
-                "w": 854,
-                "x": 415,
-                "y": 563
-            },
-            {
-                "h": 264,
-                "w": 471,
-                "x": 802,
-                "y": 557
-            },
-            {
-                "h": 327,
-                "w": 532,
-                "x": 576,
-                "y": 520
-            },
-            {
-                "h": 403,
-                "w": 665,
-                "x": 653,
-                "y": 243
-            },
-            {
-                "h": 397,
-                "w": 455,
-                "x": 636,
-                "y": 230
-            },
-            {
-                "h": 55,
-                "w": 300,
-                "x": 260,
-                "y": 1052
-            }
-        ],
-        "wayland": {
-            "kde": {
-                "kwinScreenshot": {
-                    "enabled": true
-                }
-            }
+  "annotation": {
+    "defaultColor": "#FF4D4D",
+    "defaultTool": "pen",
+    "fileDefaultTool": "pen",
+    "fullscreenDefaultTool": "pen"
+  },
+  "capture": {
+    "freezeScope": "all-screens",
+    "hideOwnWindows": true,
+    "includeCursor": false,
+    "selectionHistory": [
+      {
+        "h": 401,
+        "w": 459,
+        "x": 633,
+        "y": 211
+      },
+      {
+        "h": 401,
+        "w": 843,
+        "x": 346,
+        "y": 171
+      },
+      {
+        "h": 416,
+        "w": 923,
+        "x": 352,
+        "y": 165
+      },
+      {
+        "h": 74,
+        "w": 348,
+        "x": 219,
+        "y": 353
+      },
+      {
+        "h": 1068,
+        "w": 834,
+        "x": 4,
+        "y": 44
+      },
+      {
+        "h": 68,
+        "w": 496,
+        "x": 411,
+        "y": 277
+      },
+      {
+        "h": 47,
+        "w": 429,
+        "x": 967,
+        "y": 321
+      },
+      {
+        "h": 76,
+        "w": 430,
+        "x": 881,
+        "y": 313
+      },
+      {
+        "h": 1068,
+        "w": 834,
+        "x": 842,
+        "y": 44
+      },
+      {
+        "h": 390,
+        "w": 384,
+        "x": 362,
+        "y": 252
+      }
+    ],
+    "wayland": {
+      "kde": {
+        "kwinScreenshot": {
+          "enabled": true
         }
-    },
-    "clipboard": {
-        "image": {
-            "mode": "image/png",
-            "thresholdM": 4
-        }
-    },
-    "codeScan": {
-        "command": "",
-        "provider": "auto",
-        "timeoutMs": 15000
-    },
-    "debug": {
-        "enabled": false,
-        "logPath": "/tmp/mark-shot-scroll.log"
-    },
-    "env": {
-    },
-    "export": {
-        "imageFrame": {
-            "cornerRadius": 18,
-            "enabled": false,
-            "padding": 112,
-            "shadowOffsetY": 28,
-            "shadowOpacity": 0.32,
-            "shadowRadius": 72
-        }
-    },
-    "globalHotkeys": {
-        "capture": "",
-        "enabled": false,
-        "fullscreen": ""
-    },
-    "ocr": {
-        "backend": "rapidocr",
-        "command": "",
-        "enabled": true,
-        "provider": "auto",
-        "resultPanel": true,
-        "timeoutMs": 30000
-    },
-    "pinnedWindow": {
-        "alwaysOnTop": true,
-        "autoOcr": false,
-        "border": true,
-        "borderColor": "#5EEAD4",
-        "borderEnabled": true,
-        "borderWidth": 2,
-        "textSelectionCopyEnabled": true
-    },
-    "recording": {
-        "storage": {
-            "gifDirectory": "/home/dai0v0/Pictures/mark-shot/gifs",
-            "videoDirectory": "/home/dai0v0/Pictures/mark-shot/videos"
-        }
-    },
-    "save": {
-        "pathTemplate": "{pictures}/mark-shot/mark-shot-{datetime}.png"
-    },
-    "scrollCapture": {
-        "frame": 5,
-        "frameEnabled": true,
-        "frameGap": 5,
-        "hidePreviewDuringCapture": false,
-        "previewGap": 5
-    },
-    "shortcuts": {
-        "actions": {
-            "cancel": "Esc",
-            "clear": "",
-            "copy": "Ctrl+C",
-            "extensions": "",
-            "ocrCopy": "",
-            "openWith": "",
-            "pin": "Ctrl+P",
-            "redo": "Ctrl+Y",
-            "save": "Ctrl+S",
-            "scrollCapture": "",
-            "settings": "",
-            "toggleCaptureScope": "F",
-            "toggleToolbarLayout": "",
-            "undo": "Ctrl+Z",
-            "upload": "Ctrl+U"
-        },
-        "startup": {
-            "codeScanner": "Q",
-            "colorPicker": "C",
-            "displayCapture": "D",
-            "gifRecorder": "G",
-            "ruler": "R",
-            "videoRecorder": "V"
-        },
-        "tools": {
-            "arrow": "A",
-            "ellipse": "E",
-            "highlighter": "H",
-            "laser": "G",
-            "line": "L",
-            "magnifier": "Z",
-            "mosaic": "M",
-            "move": "V",
-            "number": "N",
-            "pen": "P",
-            "rectangle": "R",
-            "select": "S",
-            "text": "T"
-        }
+      }
+    }
+  },
+  "clipboard": {
+    "image": {
+      "mode": "image/png",
+      "thresholdM": 4
+    }
+  },
+  "codeScan": {
+    "command": "",
+    "provider": "auto",
+    "timeoutMs": 15000
+  },
+  "debug": {
+    "enabled": false,
+    "logPath": "/tmp/mark-shot-scroll.log"
+  },
+  "env": {},
+  "export": {
+    "imageFrame": {
+      "cornerRadius": 18,
+      "enabled": false,
+      "padding": 112,
+      "shadowOffsetY": 28,
+      "shadowOpacity": 0.32,
+      "shadowRadius": 72
+    }
+  },
+  "globalHotkeys": {
+    "capture": "",
+    "enabled": false,
+    "fullscreen": ""
+  },
+  "ocr": {
+    "backend": "rapidocr",
+    "command": "",
+    "enabled": true,
+    "provider": "auto",
+    "resultPanel": true,
+    "timeoutMs": 30000
+  },
+  "pinnedWindow": {
+    "alwaysOnTop": true,
+    "autoOcr": false,
+    "border": true,
+    "borderColor": "#5EEAD4",
+    "borderEnabled": true,
+    "borderWidth": 2,
+    "textSelectionCopyEnabled": true
+  },
+  "recording": {
+    "storage": {
+      "gifDirectory": "/home/dai0v0/Pictures/mark-shot/gifs",
+      "videoDirectory": "/home/dai0v0/Pictures/mark-shot/videos"
+    }
+  },
+  "save": {
+    "pathTemplate": "{pictures}/mark-shot/mark-shot-{datetime}.png"
+  },
+  "scrollCapture": {
+    "frame": 5,
+    "frameEnabled": true,
+    "frameGap": 5,
+    "hidePreviewDuringCapture": false,
+    "previewGap": 5
+  },
+  "shortcuts": {
+    "actions": {
+      "cancel": "Esc",
+      "clear": "",
+      "copy": "Ctrl+C",
+      "extensions": "",
+      "ocrCopy": "",
+      "openWith": "",
+      "pin": "Ctrl+P",
+      "redo": "Ctrl+Y",
+      "save": "Ctrl+S",
+      "scrollCapture": "",
+      "settings": "",
+      "toggleCaptureScope": "F",
+      "toggleToolbarLayout": "",
+      "undo": "Ctrl+Z",
+      "upload": "Ctrl+U"
     },
     "startup": {
-        "launchOnStartup": true
+      "codeScanner": "Q",
+      "colorPicker": "C",
+      "displayCapture": "D",
+      "gifRecorder": "G",
+      "ruler": "R",
+      "videoRecorder": "V"
     },
-    "toolbar": {
-        "fontSize": 11,
-        "iconSize": 22
-    },
-    "translation": {
-        "apiBase": "https://api.openai.com/v1",
-        "apiKey": "",
-        "apiKeyEnv": "OPENAI_API_KEY",
-        "autoAfterOcr": false,
-        "command": "",
-        "model": "gpt-4o-mini",
-        "provider": "auto",
-        "systemPrompt": "",
-        "targetLanguage": "English",
-        "temperature": 0.2,
-        "timeoutMs": 60000,
-        "timeoutSeconds": 60
-    },
-    "ui": {
-        "language": "system",
-        "theme": "system"
-    },
-    "upload": {
-        "command": "",
-        "env": {
-        },
-        "timeoutMs": 30000
-    },
-    "windowDetection": {
-        "command": "mark-shot-window-detection-niri",
-        "enabled": true,
-        "env": {
-        },
-        "timeoutMs": 1000,
-        "workingDirectory": ""
-    },
-    "windows": {
-        "hotkeys": {
-            "capture": "",
-            "enabled": false,
-            "fullscreen": ""
-        },
-        "tray": {
-            "autoStart": true,
-            "enabled": true
-        }
+    "tools": {
+      "arrow": "A",
+      "ellipse": "E",
+      "highlighter": "H",
+      "laser": "G",
+      "line": "L",
+      "magnifier": "Z",
+      "mosaic": "M",
+      "move": "V",
+      "number": "N",
+      "pen": "P",
+      "rectangle": "R",
+      "select": "S",
+      "text": "T"
     }
+  },
+  "startup": {
+    "launchOnStartup": true
+  },
+  "toolbar": {
+    "fontSize": 11,
+    "iconSize": 22
+  },
+  "translation": {
+    "apiBase": "https://api.openai.com/v1",
+    "apiKey": "",
+    "apiKeyEnv": "OPENAI_API_KEY",
+    "autoAfterOcr": false,
+    "command": "",
+    "model": "gpt-4o-mini",
+    "provider": "auto",
+    "systemPrompt": "",
+    "targetLanguage": "English",
+    "temperature": 0.2,
+    "timeoutMs": 60000,
+    "timeoutSeconds": 60
+  },
+  "ui": {
+    "language": "system",
+    "theme": "system"
+  },
+  "upload": {
+    "command": "",
+    "env": {},
+    "timeoutMs": 30000
+  },
+  "windowDetection": {
+    "command": "mark-shot-window-detection-niri",
+    "enabled": true,
+    "env": {},
+    "timeoutMs": 1000,
+    "workingDirectory": ""
+  },
+  "windows": {
+    "hotkeys": {
+      "capture": "",
+      "enabled": false,
+      "fullscreen": ""
+    },
+    "tray": {
+      "autoStart": true,
+      "enabled": true
+    }
+  }
 }
-

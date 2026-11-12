@@ -94,15 +94,15 @@
                 "terminal.ansi.blue": "#a3adf2",
                 "terminal.ansi.bright_blue": "#c4ccff",
                 "terminal.ansi.dim_blue": "#a3adf2",
-                "terminal.ansi.magenta": "#3b4376",
+                "terminal.ansi.magenta": "#394379",
                 "terminal.ansi.bright_magenta": "#ced5ff",
-                "terminal.ansi.dim_magenta": "#3b4376",
+                "terminal.ansi.dim_magenta": "#394379",
                 "terminal.ansi.cyan": "#bac3ff",
                 "terminal.ansi.bright_cyan": "#dfe3ff",
                 "terminal.ansi.dim_cyan": "#bac3ff",
-                "terminal.ansi.white": "#eff1ff",
+                "terminal.ansi.white": "#eff2ff",
                 "terminal.ansi.bright_white": "#f8f9ff",
-                "terminal.ansi.dim_white": "#eff1ff",
+                "terminal.ansi.dim_white": "#eff2ff",
                 "link_text.hover": "#bac3ff",
                 "version_control.added": "#7fff95",
                 "version_control.modified": "#ffd772",
@@ -168,9 +168,9 @@
                         "selection": "#ffd7723D"
                     },
                     {
-                        "cursor": "#3b4376",
-                        "background": "#3b437680",
-                        "selection": "#3b43763D"
+                        "cursor": "#394379",
+                        "background": "#39437980",
+                        "selection": "#3943793D"
                     },
                     {
                         "cursor": "#bac3ff",
@@ -250,7 +250,7 @@
                         "font_weight": null
                     },
                     "keyword": {
-                        "color": "#3b4376",
+                        "color": "#394379",
                         "font_style": "italic",
                         "font_weight": null
                     },
@@ -429,7 +429,7 @@
                 "tab_bar.background": "#fbf8ff",
                 "tab.inactive_background": "#fbf8ff",
                 "tab.active_background": "#fbf8ff",
-                "search.match_background": "#af8a2b50",
+                "search.match_background": "#8d6c0450",
                 "search.active_match_background": "#af576e66",
                 "panel.background": "#fbf8ff",
                 "panel.focused_border": null,
@@ -458,24 +458,24 @@
                 "terminal.foreground": "#1b1b21",
                 "terminal.bright_foreground": "#d6d7db",
                 "terminal.dim_foreground": "#46464f",
-                "terminal.ansi.black": "#121318",
-                "terminal.ansi.bright_black": "#000004",
-                "terminal.ansi.dim_black": "#121318",
+                "terminal.ansi.black": "#fbf8ff",
+                "terminal.ansi.bright_black": "#bbbbbe",
+                "terminal.ansi.dim_black": "#fbf8ff",
                 "terminal.ansi.red": "#8a374c",
                 "terminal.ansi.bright_red": "#af576e",
                 "terminal.ansi.dim_red": "#8a374c",
                 "terminal.ansi.green": "#266d32",
-                "terminal.ansi.bright_green": "#48a056",
+                "terminal.ansi.bright_green": "#449c52",
                 "terminal.ansi.dim_green": "#266d32",
-                "terminal.ansi.yellow": "#af8a2b",
-                "terminal.ansi.bright_yellow": "#bd9838",
-                "terminal.ansi.dim_yellow": "#af8a2b",
+                "terminal.ansi.yellow": "#8d6c04",
+                "terminal.ansi.bright_yellow": "#a98625",
+                "terminal.ansi.dim_yellow": "#8d6c04",
                 "terminal.ansi.blue": "#515c99",
-                "terminal.ansi.bright_blue": "#5e6bb1",
+                "terminal.ansi.bright_blue": "#5562a7",
                 "terminal.ansi.dim_blue": "#515c99",
-                "terminal.ansi.magenta": "#dae0ff",
-                "terminal.ansi.bright_magenta": "#dae0ff",
-                "terminal.ansi.dim_magenta": "#dae0ff",
+                "terminal.ansi.magenta": "#636da6",
+                "terminal.ansi.bright_magenta": "#7f88ba",
+                "terminal.ansi.dim_magenta": "#636da6",
                 "terminal.ansi.cyan": "#515b92",
                 "terminal.ansi.bright_cyan": "#939abd",
                 "terminal.ansi.dim_cyan": "#515b92",
@@ -484,7 +484,7 @@
                 "terminal.ansi.dim_white": "#272728",
                 "link_text.hover": "#515b92",
                 "version_control.added": "#266d32",
-                "version_control.modified": "#af8a2b",
+                "version_control.modified": "#8d6c04",
                 "version_control.word_added": "#266d3233",
                 "version_control.word_deleted": "#8a374c33",
                 "version_control.deleted": "#8a374c",
@@ -505,16 +505,16 @@
                 "hidden.border": "#c6c5d060",
                 "hint": "#515b92",
                 "hint.background": "#dee1ff80",
-                "hint.border": "#0a164b",
+                "hint.border": "#09164b",
                 "ignored": "#46464f60",
                 "ignored.background": "#e3e1ec40",
                 "ignored.border": "#c6c5d040",
                 "info": "#515b92",
                 "info.background": "#dee1ff80",
-                "info.border": "#0a164b",
-                "modified": "#af8a2b",
-                "modified.background": "#af8a2b1A",
-                "modified.border": "#af8a2b",
+                "info.border": "#09164b",
+                "modified": "#8d6c04",
+                "modified.background": "#8d6c041A",
+                "modified.border": "#8d6c04",
                 "predictive": "#46464f80",
                 "predictive.border": "#767680",
                 "predictive.background": "#e3e1e980",
@@ -542,14 +542,14 @@
                         "selection": "#8a374c3D"
                     },
                     {
-                        "cursor": "#af8a2b",
-                        "background": "#af8a2b80",
-                        "selection": "#af8a2b3D"
+                        "cursor": "#8d6c04",
+                        "background": "#8d6c0480",
+                        "selection": "#8d6c043D"
                     },
                     {
-                        "cursor": "#dae0ff",
-                        "background": "#dae0ff80",
-                        "selection": "#dae0ff3D"
+                        "cursor": "#636da6",
+                        "background": "#636da680",
+                        "selection": "#636da63D"
                     },
                     {
                         "cursor": "#515b92",
@@ -562,9 +562,9 @@
                         "selection": "#af576e3D"
                     },
                     {
-                        "cursor": "#48a056",
-                        "background": "#48a05680",
-                        "selection": "#48a0563D"
+                        "cursor": "#449c52",
+                        "background": "#449c5280",
+                        "selection": "#449c523D"
                     },
                     {
                         "cursor": "#266d32",
@@ -584,12 +584,12 @@
                         "font_weight": null
                     },
                     "comment": {
-                        "color": "#000004",
+                        "color": "#bbbbbe",
                         "font_style": "italic",
                         "font_weight": null
                     },
                     "comment.doc": {
-                        "color": "#000004",
+                        "color": "#bbbbbe",
                         "font_style": "italic",
                         "font_weight": null
                     },
@@ -629,7 +629,7 @@
                         "font_weight": null
                     },
                     "keyword": {
-                        "color": "#dae0ff",
+                        "color": "#636da6",
                         "font_style": "italic",
                         "font_weight": null
                     },
@@ -689,7 +689,7 @@
                         "font_weight": null
                     },
                     "selector": {
-                        "color": "#af8a2b",
+                        "color": "#8d6c04",
                         "font_style": null,
                         "font_weight": null
                     },
@@ -709,7 +709,7 @@
                         "font_weight": null
                     },
                     "string.regex": {
-                        "color": "#48a056",
+                        "color": "#449c52",
                         "font_style": null,
                         "font_weight": null
                     },
@@ -739,7 +739,7 @@
                         "font_weight": 700
                     },
                     "type": {
-                        "color": "#af8a2b",
+                        "color": "#8d6c04",
                         "font_style": "italic",
                         "font_weight": null
                     },
@@ -852,15 +852,15 @@
                 "terminal.ansi.blue": "#a3adf2",
                 "terminal.ansi.bright_blue": "#c4ccff",
                 "terminal.ansi.dim_blue": "#a3adf2",
-                "terminal.ansi.magenta": "#3b4376",
+                "terminal.ansi.magenta": "#394379",
                 "terminal.ansi.bright_magenta": "#ced5ff",
-                "terminal.ansi.dim_magenta": "#3b4376",
+                "terminal.ansi.dim_magenta": "#394379",
                 "terminal.ansi.cyan": "#bac3ff",
                 "terminal.ansi.bright_cyan": "#dfe3ff",
                 "terminal.ansi.dim_cyan": "#bac3ff",
-                "terminal.ansi.white": "#eff1ff",
+                "terminal.ansi.white": "#eff2ff",
                 "terminal.ansi.bright_white": "#f8f9ff",
-                "terminal.ansi.dim_white": "#eff1ff",
+                "terminal.ansi.dim_white": "#eff2ff",
                 "link_text.hover": "#bac3ff",
                 "version_control.added": "#7fff95",
                 "version_control.modified": "#ffd772",
@@ -926,9 +926,9 @@
                         "selection": "#ffd7723D"
                     },
                     {
-                        "cursor": "#3b4376",
-                        "background": "#3b437680",
-                        "selection": "#3b43763D"
+                        "cursor": "#394379",
+                        "background": "#39437980",
+                        "selection": "#3943793D"
                     },
                     {
                         "cursor": "#bac3ff",
@@ -1008,7 +1008,7 @@
                         "font_weight": null
                     },
                     "keyword": {
-                        "color": "#3b4376",
+                        "color": "#394379",
                         "font_style": "italic",
                         "font_weight": null
                     },
@@ -1187,7 +1187,7 @@
                 "tab_bar.background": "#fbf8ffB6",
                 "tab.inactive_background": "#fbf8ffB6",
                 "tab.active_background": "#fbf8ffB6",
-                "search.match_background": "#af8a2b50",
+                "search.match_background": "#8d6c0450",
                 "search.active_match_background": "#af576e66",
                 "panel.background": "#fbf8ffB6",
                 "panel.focused_border": null,
@@ -1216,24 +1216,24 @@
                 "terminal.foreground": "#1b1b21",
                 "terminal.bright_foreground": "#d6d7db",
                 "terminal.dim_foreground": "#46464f",
-                "terminal.ansi.black": "#121318",
-                "terminal.ansi.bright_black": "#000004",
-                "terminal.ansi.dim_black": "#121318",
+                "terminal.ansi.black": "#fbf8ff",
+                "terminal.ansi.bright_black": "#bbbbbe",
+                "terminal.ansi.dim_black": "#fbf8ff",
                 "terminal.ansi.red": "#8a374c",
                 "terminal.ansi.bright_red": "#af576e",
                 "terminal.ansi.dim_red": "#8a374c",
                 "terminal.ansi.green": "#266d32",
-                "terminal.ansi.bright_green": "#48a056",
+                "terminal.ansi.bright_green": "#449c52",
                 "terminal.ansi.dim_green": "#266d32",
-                "terminal.ansi.yellow": "#af8a2b",
-                "terminal.ansi.bright_yellow": "#bd9838",
-                "terminal.ansi.dim_yellow": "#af8a2b",
+                "terminal.ansi.yellow": "#8d6c04",
+                "terminal.ansi.bright_yellow": "#a98625",
+                "terminal.ansi.dim_yellow": "#8d6c04",
                 "terminal.ansi.blue": "#515c99",
-                "terminal.ansi.bright_blue": "#5e6bb1",
+                "terminal.ansi.bright_blue": "#5562a7",
                 "terminal.ansi.dim_blue": "#515c99",
-                "terminal.ansi.magenta": "#dae0ff",
-                "terminal.ansi.bright_magenta": "#dae0ff",
-                "terminal.ansi.dim_magenta": "#dae0ff",
+                "terminal.ansi.magenta": "#636da6",
+                "terminal.ansi.bright_magenta": "#7f88ba",
+                "terminal.ansi.dim_magenta": "#636da6",
                 "terminal.ansi.cyan": "#515b92",
                 "terminal.ansi.bright_cyan": "#939abd",
                 "terminal.ansi.dim_cyan": "#515b92",
@@ -1242,7 +1242,7 @@
                 "terminal.ansi.dim_white": "#272728",
                 "link_text.hover": "#515b92",
                 "version_control.added": "#266d32",
-                "version_control.modified": "#af8a2b",
+                "version_control.modified": "#8d6c04",
                 "version_control.word_added": "#266d3233",
                 "version_control.word_deleted": "#8a374c33",
                 "version_control.deleted": "#8a374c",
@@ -1263,16 +1263,16 @@
                 "hidden.border": "#c6c5d060",
                 "hint": "#515b92",
                 "hint.background": "#dee1ff80",
-                "hint.border": "#0a164b",
+                "hint.border": "#09164b",
                 "ignored": "#46464f60",
                 "ignored.background": "#e3e1ec40",
                 "ignored.border": "#c6c5d040",
                 "info": "#515b92",
                 "info.background": "#dee1ff80",
-                "info.border": "#0a164b",
-                "modified": "#af8a2b",
-                "modified.background": "#af8a2b1A",
-                "modified.border": "#af8a2b",
+                "info.border": "#09164b",
+                "modified": "#8d6c04",
+                "modified.background": "#8d6c041A",
+                "modified.border": "#8d6c04",
                 "predictive": "#46464f80",
                 "predictive.border": "#767680",
                 "predictive.background": "#e3e1e980",
@@ -1300,14 +1300,14 @@
                         "selection": "#8a374c3D"
                     },
                     {
-                        "cursor": "#af8a2b",
-                        "background": "#af8a2b80",
-                        "selection": "#af8a2b3D"
+                        "cursor": "#8d6c04",
+                        "background": "#8d6c0480",
+                        "selection": "#8d6c043D"
                     },
                     {
-                        "cursor": "#dae0ff",
-                        "background": "#dae0ff80",
-                        "selection": "#dae0ff3D"
+                        "cursor": "#636da6",
+                        "background": "#636da680",
+                        "selection": "#636da63D"
                     },
                     {
                         "cursor": "#515b92",
@@ -1320,9 +1320,9 @@
                         "selection": "#af576e3D"
                     },
                     {
-                        "cursor": "#48a056",
-                        "background": "#48a05680",
-                        "selection": "#48a0563D"
+                        "cursor": "#449c52",
+                        "background": "#449c5280",
+                        "selection": "#449c523D"
                     },
                     {
                         "cursor": "#266d32",
@@ -1342,12 +1342,12 @@
                         "font_weight": null
                     },
                     "comment": {
-                        "color": "#000004",
+                        "color": "#bbbbbe",
                         "font_style": "italic",
                         "font_weight": null
                     },
                     "comment.doc": {
-                        "color": "#000004",
+                        "color": "#bbbbbe",
                         "font_style": "italic",
                         "font_weight": null
                     },
@@ -1387,7 +1387,7 @@
                         "font_weight": null
                     },
                     "keyword": {
-                        "color": "#dae0ff",
+                        "color": "#636da6",
                         "font_style": "italic",
                         "font_weight": null
                     },
@@ -1447,7 +1447,7 @@
                         "font_weight": null
                     },
                     "selector": {
-                        "color": "#af8a2b",
+                        "color": "#8d6c04",
                         "font_style": null,
                         "font_weight": null
                     },
@@ -1467,7 +1467,7 @@
                         "font_weight": null
                     },
                     "string.regex": {
-                        "color": "#48a056",
+                        "color": "#449c52",
                         "font_style": null,
                         "font_weight": null
                     },
@@ -1497,7 +1497,7 @@
                         "font_weight": 700
                     },
                     "type": {
-                        "color": "#af8a2b",
+                        "color": "#8d6c04",
                         "font_style": "italic",
                         "font_weight": null
                     },

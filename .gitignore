@@ -33,3 +33,4 @@ dotfiles/.config/yazi
 dotfiles/.config/zen
 dotfiles/.config/user-dirs*
 dotfiles/.config/webdav-sync/secrets/*
+dotfiles/.config/zed/settings.json

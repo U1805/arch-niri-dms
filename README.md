@@ -22,7 +22,7 @@ boot in normal mode
 
 ```bash
 iwctl
-device list
+device list # 网卡 wlan0
 station wlan0 scan
 station wlan0 get-networks
 station wlan0 connect XXX
@@ -35,26 +35,11 @@ exit
 ping -c 3 bilibili.com
 ```
 
-能 ping 通，继续。
-
-这里的 `wlan0` 不是绝对的。
-如果机器上的网卡名字不一样，要以 `device list` 显示的为准。
-
 ------
 
 ## 2. 时间
 
-检查时间同步：
-
-```bash
-timedatectl
-```
-
-重点看：
-
-```text
-NTP service: active
-```
+`timedatectl` 检查时间同步结果： `NTP service: active`
 
 它会影响密钥、软件源、证书、同步。
 
@@ -127,3 +112,5 @@ ping -c 3 bilibili.com
 ```bash
 curl -fsSL https://raw.githubusercontent.com/U1805/arch-niri-dms/refs/heads/main/strap.sh | bash
 ```
+
+![preview](grub.png)
